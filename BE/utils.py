@@ -13,16 +13,17 @@ def get_mac_from_arp_cache(ip):
         if os_type == "Darwin":
             result = subprocess.run(["arp", "-n", ip], capture_output=True, text=True, check=True)
             output = result.stdout
+            print(f"ouput length: {len(output)}")
             if "no entry" in output:
                 return None
             return output.split()[3]  # MAC 주소 추출
         
         elif os_type == "Linux":
-            result = subprocess.run(["ip", "neigh", "show", ip], capture_output=True, text=True, check=True)
+            result = subprocess.run(["arp", "-a", ip], capture_output=True, text=True, check=True)
             output = result.stdout
-            if "FAILED" in output:
+            if "no match found" in output:
                 return None
-            return output.split()[4]  # MAC 주소 추출
+            return output.split()[3]  # MAC 주소 추출
         
         elif os_type == "Windows":
             result = subprocess.run(["arp", "-a", ip], capture_output=True, text=True, check=True)
