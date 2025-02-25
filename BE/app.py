@@ -2,23 +2,32 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from scapy.all import sniff, IP
 from collections import defaultdict
-from dotenv import load_dotenv
 from utils import get_mac_address, get_packet_direction, get_ports
 import threading
 import time
 import os
+import sys
 import pickle
-
-# 환경 변수 로드
-load_dotenv()
+import json
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# 모니터링 대상 설정
-MONITORING_IP = os.getenv('MONITORING_IP', '192.168.1.1')
-MONITORING_IP_SET = set(ip.strip() for ip in MONITORING_IP.split(','))
+# JSON 파일 경로
+json_file = "monitoring_ip.json"
+
+# JSON 파일이 존재하지 않으면 종료 및 안내 메시지 출력
+if not os.path.exists(json_file):
+    print("\n[오류] monitoring_ip.json 파일이 존재하지 않습니다.")
+    print("`python create_ip_json.py` 명령을 실행하여 모니터링할 IP를 추가하세요.")
+    sys.exit(1)
+
+# JSON 파일에서 모니터링 IP 로드
+with open(json_file, "r") as f:
+    ip_config = json.load(f)
+
+MONITORING_IP_SET = set(ip_config.get("MONITORING_IP", ["192.168.1.1"]))
 MONITORING_MAC_DICT = {}
 
 # 설정 값
