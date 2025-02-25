@@ -1,30 +1,39 @@
 from scapy.all import ARP, Ether, srp, TCP, UDP
-import os
-import time
+import subprocess
 import platform
 
 def get_mac_from_arp_cache(ip):
     """
     OS의 ARP 캐시에서 특정 IP의 MAC 주소를 가져옴
-    macOS만 시도하여 추가 실험 필요
+    macOS, Linux, Windows 지원
     """
     os_type = platform.system()
-    if os_type == "Darwin":
-        output = os.popen(f"arp -n {ip}").read()
-        if "no entry" in output:
-            return None
-        return output.split()[3]
-    elif os_type == "Linux":
-        output = os.popen(f"ip neigh show {ip}").read()
-        if "FAILED" in output:
-            return None
-        return output.split()[4]
-    elif os_type == "Windows":
-        output = os.popen(f"arp -a {ip}").read()
-        if "No ARP Entries Found." in output:
-            return None
-        return output.split()[3].replace('-', ':')
     
+    try:
+        if os_type == "Darwin":
+            result = subprocess.run(["arp", "-n", ip], capture_output=True, text=True, check=True)
+            output = result.stdout
+            if "no entry" in output:
+                return None
+            return output.split()[3]  # MAC 주소 추출
+        
+        elif os_type == "Linux":
+            result = subprocess.run(["ip", "neigh", "show", ip], capture_output=True, text=True, check=True)
+            output = result.stdout
+            if "FAILED" in output:
+                return None
+            return output.split()[4]  # MAC 주소 추출
+        
+        elif os_type == "Windows":
+            result = subprocess.run(["arp", "-a", ip], capture_output=True, text=True, check=True)
+            output = result.stdout
+            if "No ARP Entries Found." in output:
+                return None
+            return output.split()[3].replace('-', ':')  # Windows MAC 형식 변환
+        
+    except subprocess.CalledProcessError:
+        return None  # 오류 발생 시 None 반환
+
     return None  # MAC 주소를 찾지 못한 경우
 
 def get_mac_address(ip):
