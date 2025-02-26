@@ -2,6 +2,7 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 from scapy.all import sniff, IP
 from collections import defaultdict
+from bitarray import bitarray
 from utils import get_mac_address, get_packet_direction, get_ports
 import threading
 import time
@@ -9,6 +10,7 @@ import os
 import sys
 import pickle
 import json
+import numpy as np
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
@@ -33,6 +35,7 @@ MONITORING_MAC_DICT = {}
 # 설정 값
 UPDATE_MAC_INTERVAL = 10  # MAC 주소 갱신 주기 (초)
 MIN_PACKET_COUNT = 100  # 최소 패킷 개수 (탐지 기준)
+DISC_RANGE = 13
 
 # 패킷 데이터 저장소
 packet_data = {
@@ -58,10 +61,37 @@ bitmap_data = {
     "inbound": application_detect['bitmap'][1],
     "outbound": application_detect['bitmap'][2],
 }
-
+VEC_LEN = application_detect['VEC_LEN']
+N_GRAM = application_detect['N_GRAM']
+disc = application_detect['disc']
 # ======================== #
 #       HELPER 함수        #
 # ======================== #
+
+def embedding_packet(data):
+    """
+    패킷데이터를 비트맵에 임베딩하는 함수
+    """
+    dr = len(disc)
+    L = dr ** N_GRAM
+    res = bitarray(L)
+    
+    # `data`를 discretize_values 함수를 적용하여 변환
+    discretized_data = [discretize_values(tmp, disc) for tmp in data]
+
+    for d in [discretized_data[idx:idx+N_GRAM] for idx in range(0, min(len(discretized_data), VEC_LEN)-N_GRAM+1)]:
+        res[sum([(dr ** idx if idx > 0 else 1) * val for idx, val in enumerate(reversed(d))])] = 1
+
+    return res
+
+def discretize_values(value, disc_range):
+    """
+    값의 범위를 이산화하는 함수
+    """
+    if value == 0:
+        return DISC_RANGE
+
+    return int( (np.searchsorted(disc_range, value, side='right') - 1) + (1 if value > 0 else 0) )
 
 def classify_packet(four_tuple):
     """
@@ -72,11 +102,13 @@ def classify_packet(four_tuple):
 
     app_detect_flag.add(four_tuple)  # 탐지 완료 플래그 설정
 
-    x_data = {
+    X = {
         "total": packet_data["total"][four_tuple],
         "inbound": packet_data["inbound"][four_tuple],
         "outbound": packet_data["outbound"][four_tuple],
     }
+
+    x_data = {key: embedding_packet(X[key]) for key in ["total", "inbound", "outbound"]}
 
     max_score, max_class = -1, None
     for cls in range(n_classes):
@@ -84,8 +116,10 @@ def classify_packet(four_tuple):
         if score > max_score:
             max_score, max_class = score, cls
 
+    print(app_list[max_class])
+
     if max_class is not None:
-        socketio.emit("app_detect", (four_tuple[0], four_tuple[1], app_list[max_class]))
+        socketio.emit("app_detect", [four_tuple[1], four_tuple[0], app_list[max_class]])
 
 def process_packet(packet):
     """

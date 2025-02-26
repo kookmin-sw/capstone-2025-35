@@ -13,7 +13,6 @@ def get_mac_from_arp_cache(ip):
         if os_type == "Darwin":
             result = subprocess.run(["arp", "-n", ip], capture_output=True, text=True, check=True)
             output = result.stdout
-            print(f"ouput length: {len(output)}")
             if "no entry" in output:
                 return None
             return output.split()[3]  # MAC 주소 추출

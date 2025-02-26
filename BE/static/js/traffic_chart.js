@@ -75,6 +75,7 @@ socket.on("update_traffic", function(data) {
 // 애플리케이션 감지 이벤트 리스너 추가
 socket.on("app_detect", function(data) {
     const [src_ip, mac_address, app_name] = data;
+    console.log(data)
 
     // IP와 MAC 주소가 일치하는 경우에만 애플리케이션을 등록
     if (macDict[src_ip] === mac_address) {
