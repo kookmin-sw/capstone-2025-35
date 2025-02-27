@@ -112,14 +112,18 @@ def classify_packet(flow_key):
 
     x_data = {key: embedding_packet(X[key]) for key in ["total", "inbound", "outbound"]}
 
-    max_class = max(
-        range(n_classes),
-        key=lambda cls: sum((x_data[key] & bitmap_data[key][cls]).count(1) for key in ["total", "inbound", "outbound"]),
-        default=None
-    )
+    # 🔹 각 클래스별 점수 계산
+    class_scores = {
+        cls: sum((x_data[key] & bitmap_data[key][cls]).count(1) for key in ["total", "inbound", "outbound"])
+        for cls in range(n_classes)
+    }
+
+    # 🔹 최고 점수와 해당 클래스 찾기
+    max_class, max_score = max(class_scores.items(), key=lambda item: item[1], default=(None, 0))
 
     if max_class is not None:
-        socketio.emit("app_detect", [flow_key[1], app_list[max_class]])
+        print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={max_score}")  # 디버깅용 출력
+        socketio.emit("app_detect", [flow_key[1], app_list[max_class], max_score])
 
 
 def process_packet(packet):
@@ -145,7 +149,7 @@ def process_packet(packet):
         src_port, dst_port = dst_port, src_port
 
     mac_address = MONITORING_MAC_DICT.get(src_ip, "Unknown")
-    flow_key = (mac_address, src_ip, src_port, dst_ip, dst_port)
+    flow_key = (src_ip, src_port, dst_ip, dst_port)
 
     # 패킷 데이터 저장
     packet_data["total"][flow_key].append(packet_size)
@@ -175,7 +179,7 @@ def packet_sniffer():
 
 
 def calculate_throughput():
-    """
+    """d
     초당 트래픽량(Throughput)을 계산하고 전송하는 함수
     """
     while True:
@@ -194,6 +198,25 @@ def calculate_throughput():
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/traffic/<ip>")
+def traffic_detail(ip):
+    """
+    특정 IP의 트래픽 정보를 반환하는 페이지
+    """
+    if ip not in MONITORING_IP_SET:
+        return render_template("error.html", message="해당 IP는 모니터링되지 않습니다.")
+
+    # 트래픽 데이터 가져오기
+    data = {
+        "ip": ip,
+        "current_traffic": traffic_data.get(ip, 0),
+        "previous_traffic": prev_traffic_data.get(ip, 0),
+        "throughput": throughput_data.get(ip, 0),
+        "mac_address": MONITORING_MAC_DICT.get(ip, "Unknown"),
+    }
+
+    return render_template("traffic_detail.html", data=data)
 
 
 # ======================== #
