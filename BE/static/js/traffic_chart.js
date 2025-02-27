@@ -1,4 +1,4 @@
-const socket = io.connect("http://localhost:5001");
+const socket = io.connect("http://localhost:5002");
 const charts = {};  // IP별 차트 저장
 const chartContainers = {}; // IP별 차트 컨테이너 저장
 let macDict = {}; // MAC 주소 저장용 객체
@@ -74,14 +74,11 @@ socket.on("update_traffic", function(data) {
 
 // 애플리케이션 감지 이벤트 리스너 추가
 socket.on("app_detect", function(data) {
-    const [src_ip, mac_address, app_name] = data;
+    const [src_ip, app_name] = data;
     console.log(data)
 
-    // IP와 MAC 주소가 일치하는 경우에만 애플리케이션을 등록
-    if (macDict[src_ip] === mac_address) {
-        appDict[src_ip] = app_name;
-        updateAppUI(src_ip);
-    }
+    appDict[src_ip] = app_name;
+    updateAppUI(src_ip);
 });
 
 // 차트 생성

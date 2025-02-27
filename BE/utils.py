@@ -25,11 +25,12 @@ def get_mac_from_arp_cache(ip):
             return output.split()[3]  # MAC 주소 추출
         
         elif os_type == "Windows":
-            result = subprocess.run(["arp", "-a", ip], capture_output=True, text=True, check=True)
+            result = subprocess.run(f'cmd /C "chcp 437 && arp -a {ip}"', capture_output=True, text=True, check=True)
             output = result.stdout
             if "No ARP Entries Found." in output:
                 return None
-            return output.split()[3].replace('-', ':')  # Windows MAC 형식 변환
+            output = output.split('\n')[-2]
+            return output.split()[1].replace('-', ':')  # Windows MAC 형식 변환
         
     except subprocess.CalledProcessError:
         return None  # 오류 발생 시 None 반환
