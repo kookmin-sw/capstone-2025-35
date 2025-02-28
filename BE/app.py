@@ -3,13 +3,15 @@ from flask_socketio import SocketIO
 from scapy.all import sniff, IP, TCP, UDP
 from collections import defaultdict
 from bitarray import bitarray
-from utils import get_mac_address, get_packet_direction, get_ports
+from ipwhois import IPWhois
+from utils import get_mac_address, get_packet_direction, get_ports, get_application_for_ip
 import threading
 import time
 import os
 import sys
 import pickle
 import json
+import ipaddress
 import numpy as np
 
 # Flask 및 WebSocket 설정
@@ -28,6 +30,7 @@ with open(json_file, "r") as f:
 
 MONITORING_IP_SET = set(ip_config.get("MONITORING_IP", ["192.168.1.1"]))
 MONITORING_MAC_DICT = {}
+TARGET_APPLICATION = ip_config.get("target_application", {})
 
 # 설정 값
 UPDATE_MAC_INTERVAL = 10  # MAC 주소 갱신 주기 (초)
@@ -158,11 +161,13 @@ def process_packet(packet):
     packet_data["total"][flow_key].append(packet_size)
     packet_data[direction][flow_key].append(packet_size)
 
+    dst_info = get_application_for_ip(dst_ip, TARGET_APPLICATION)
+
     # 최소 패킷 개수 조건 충족 시 애플리케이션 탐지 실행
     if len(packet_data["total"][flow_key]) > VEC_LEN:
         max_class, score = classify_packet(flow_key)
         if max_class is not None:
-            print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}")
+            print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, dst_info={dst_info}")
             socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
 
 

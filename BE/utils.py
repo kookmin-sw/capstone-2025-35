@@ -1,6 +1,9 @@
 from scapy.all import ARP, Ether, srp, TCP, UDP
 import subprocess
 import platform
+import ipaddress
+import json
+from ipwhois import IPWhois
 
 def get_mac_from_arp_cache(ip):
     """
@@ -69,3 +72,17 @@ def get_ports(packet):
     if UDP in packet:
         return packet[UDP].sport, packet[UDP].dport
     return 0, 0
+
+def get_application_for_ip(ip, TARGET_APPLICATION):
+    """
+    주어진 IP가 monitoring_ip.json의 CIDR 범위에 속하는지 확인하고
+    해당하는 애플리케이션을 반환하는 함수
+    """
+    for cidr, app_name in TARGET_APPLICATION.items():
+        try:
+            if ipaddress.ip_address(ip) in ipaddress.ip_network(cidr, strict=False):
+                return app_name
+        except ValueError:
+            continue  # CIDR 형식 오류가 있어도 무시하고 계속 진행
+
+    return None  # 매칭되는 CIDR이 없으면 None 반환
