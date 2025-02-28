@@ -22,7 +22,7 @@ python app.py
 # 3. 운영체제 별 app.py 실행
 ## macOS
 ```bash
-python app.py
+sudo python app.py
 ```
 ## Linux
 ```bash
