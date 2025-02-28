@@ -53,14 +53,14 @@ with open('bitmap_record.pkl', 'rb') as f:
 app_list = application_detect['class']
 n_classes = len(app_list)
 n_fold = application_detect['N_FOLD']
-bitmap_data = defaultdict(list)
-# 각 fold에 대해 "total", "inbound", "outbound" 비트맵을 저장
-for fold_data in application_detect['bitmap']:
-    for key, bitmap in zip(["total", "inbound", "outbound"], fold_data):
-        bitmap_data[key].append(bitmap)
+bitmap_data = {
+    "total": application_detect['bitmap'][0],
+    "inbound": application_detect['bitmap'][1],
+    "outbound": application_detect['bitmap'][2]
+}
 N_GRAM = application_detect['N_GRAM']
 VEC_LEN = application_detect['VEC_LEN']
-disc_data = application_detect['disc']
+disc = application_detect['disc']
 
 # ======================== #
 #       HELPER 함수        #
@@ -75,7 +75,7 @@ def discretize_values(value, disc_range):
     return np.searchsorted(disc_range, value, side='right') - 1 + (1 if value > 0 else 0)
 
 
-def embedding_packet(packet_seq, disc):
+def embedding_packet(packet_seq):
     """
     패킷 데이터를 비트맵으로 변환하는 함수
     """
@@ -99,7 +99,7 @@ def classify_packet(flow_key):
     패킷 데이터를 기반으로 애플리케이션을 식별하는 함수
     """
     if flow_key in app_detect_flag:
-        return  # 이미 탐지된 경우 건너뜀
+        return  None, None # 이미 탐지된 경우 건너뜀
 
     app_detect_flag.add(flow_key)
 
@@ -112,25 +112,18 @@ def classify_packet(flow_key):
     # 🔹 각 클래스별 점수 계산
     class_scores = {cls: {"total": 0, "inbound": 0, "outbound": 0, "sum": 0} for cls in range(n_classes)}
 
-    for n in range(n_fold):
-        disc = disc_data[n]
-        x_data = {key: embedding_packet(X[key], disc) for key in ["total", "inbound", "outbound"]}
+    x_data = {key: embedding_packet(X[key]) for key in ["total", "inbound", "outbound"]}
 
-        for cls in range(n_classes):
-            for key in ["total", "inbound", "outbound"]:
-                score = sum(a & b for a, b in zip(bitmap_data[key][n][cls], x_data[key]))
-                class_scores[cls][key] += score
-
-    for cls in range(n_classes):
-        class_scores[cls]["sum"] = sum(class_scores[cls].values())
+    # 🔹 각 클래스별 점수 계산
+    class_scores = {
+        cls: sum((x_data[key] & bitmap_data[key][cls]).count(1) for key in ["total", "inbound", "outbound"])
+        for cls in range(n_classes)
+    }
 
     # 🔹 최고 점수와 해당 클래스 찾기
-    max_class, max_score = max(class_scores.items(), key=lambda x: x[1]["sum"], default=(None, {"sum": 0}))
+    max_class, max_score = max(class_scores.items(), key=lambda item: item[1], default=(None, 0))
 
-    if max_class is not None:
-        print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={max_score}")  # 디버깅용 출력
-        socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
-
+    return max_class, max_score
 
 def process_packet(packet):
     """
@@ -167,7 +160,10 @@ def process_packet(packet):
 
     # 최소 패킷 개수 조건 충족 시 애플리케이션 탐지 실행
     if len(packet_data["total"][flow_key]) > VEC_LEN:
-        classify_packet(flow_key)
+        max_class, score = classify_packet(flow_key)
+        if max_class is not None:
+            print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}")
+            socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
 
 
 def update_mac_addresses():
