@@ -4,15 +4,16 @@ from scapy.all import sniff, IP, TCP, UDP
 from collections import defaultdict
 from bitarray import bitarray
 from ipwhois import IPWhois
-from utils import get_mac_address, get_packet_direction, get_ports, get_application_for_ip
+from utils import get_packet_direction
+import pyshark
 import threading
 import time
 import os
 import sys
 import pickle
 import json
-import ipaddress
 import numpy as np
+import asyncio
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
@@ -35,6 +36,10 @@ TARGET_APPLICATION = ip_config.get("target_application", {})
 # 설정 값
 UPDATE_MAC_INTERVAL = 10  # MAC 주소 갱신 주기 (초)
 DISC_RANGE = 13  # 이산화 구간
+interface = "이더넷"
+
+mac_list = []
+sni_dir = {}
 
 # 패킷 데이터 저장소
 packet_data = {
@@ -50,12 +55,12 @@ prev_traffic_data = {ip: 0 for ip in MONITORING_IP_SET}
 throughput_data = {ip: 0 for ip in MONITORING_IP_SET}
 
 # Bitmap 데이터 로드
-with open('bitmap_record.pkl', 'rb') as f:
+with open('best_res.pkl', 'rb') as f:
     application_detect = pickle.load(f)
 
 app_list = application_detect['class']
 n_classes = len(app_list)
-n_fold = application_detect['N_FOLD']
+#n_fold = application_detect['N_FOLD']
 bitmap_data = {
     "total": application_detect['bitmap'][0],
     "inbound": application_detect['bitmap'][1],
@@ -132,62 +137,89 @@ def process_packet(packet):
     """
     패킷을 분석하고 데이터를 저장하는 함수
     """
-    if IP not in packet:
-        return
+    try:
+        if hasattr(packet, "ip"):
+            src_ip = packet.ip.src
+            dst_ip = packet.ip.dst
+            packet_size = int(packet.ip.len) - int(packet.ip.hdr_len)
+        else:
+            return
+        
+        if hasattr(packet, "tcp"):
+            src_port = packet.tcp.srcport
+            dst_port = packet.tcp.dstport
+            protocol = 6
+        elif hasattr(packet, "udp"):
+            src_port = packet.udp.srcport
+            dst_port = packet.udp.dstport
+            protocol = 17
+        else:
+            return        
 
-    src_ip, dst_ip = packet[IP].src, packet[IP].dst
-    protocol = 6 if TCP in packet else 17 if UDP in packet else None
-    if protocol is None:
-        return
-    packet_size = len(packet[IP].payload)
-    # 트래픽 데이터 갱신
-    for ip in [src_ip, dst_ip]:
-        if ip in MONITORING_IP_SET:
-            traffic_data[ip] += packet_size
+        # 트래픽 데이터 갱신
+        for ip in [src_ip, dst_ip]:
+            if ip in MONITORING_IP_SET:
+                traffic_data[ip] += packet_size
 
-    direction = get_packet_direction(src_ip, dst_ip, MONITORING_IP_SET)
-    src_port, dst_port = get_ports(packet)
+        direction = get_packet_direction(src_ip, dst_ip, MONITORING_IP_SET)
 
-    if direction == "inbound":
-        src_ip, dst_ip = dst_ip, src_ip
-        src_port, dst_port = dst_port, src_port
-    else:
-        packet_size = -packet_size
+        if direction == "inbound":
+            src_ip, dst_ip = dst_ip, src_ip
+            src_port, dst_port = dst_port, src_port
+        else:
+            packet_size = -packet_size
+        
+        if hasattr(packet, "eth"):
+            src_mac = packet.eth.src
+            if MONITORING_MAC_DICT.get(src_ip) != src_mac:
+                MONITORING_MAC_DICT[src_ip] = src_mac
+                socketio.emit("update_mac", [src_ip, src_mac])
+        
+        flow_key = (src_ip, src_port, dst_ip, dst_port, protocol)
 
-    mac_address = MONITORING_MAC_DICT.get(src_ip, "Unknown")
-    flow_key = (src_ip, src_port, dst_ip, dst_port, protocol)
+         # TLS 패킷인지 확인
+        if hasattr(packet, 'tls'):
+            # TLS 핸드셰이크 메시지 확인
+            if hasattr(packet.tls, 'handshake_extensions_server_name'):
+                sni_value = packet.tls.handshake_extensions_server_name
+                sni_dir[flow_key] = sni_value
+        
+        packet_data["total"][flow_key].append(packet_size)
+        packet_data[direction][flow_key].append(packet_size)
 
-    # 패킷 데이터 저장
-    packet_data["total"][flow_key].append(packet_size)
-    packet_data[direction][flow_key].append(packet_size)
+        # 최소 패킷 개수 조건 충족 시 애플리케이션 탐지 실행
+        if len(packet_data["total"][flow_key]) > VEC_LEN:
+            max_class, score = classify_packet(flow_key)
+            if max_class is not None:
+                print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, sni={sni_dir.get(flow_key)}")
+                socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
+    except Exception as e:
+        print(f"[오류] 패킷 처리 중 오류 발생: {e}")
 
-    dst_info = get_application_for_ip(dst_ip, TARGET_APPLICATION)
-
-    # 최소 패킷 개수 조건 충족 시 애플리케이션 탐지 실행
-    if len(packet_data["total"][flow_key]) > VEC_LEN:
-        max_class, score = classify_packet(flow_key)
-        if max_class is not None:
-            print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, dst_info={dst_info}")
-            socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
-
-
-def update_mac_addresses():
+def generate_ip_filter(ip_set):
     """
-    모니터링 대상 IP의 MAC 주소를 주기적으로 갱신하는 함수
+    IP 주소에 대한 필터를 생성하는 함수
     """
-    while True:
-        MONITORING_MAC_DICT.update({ip: get_mac_address(ip) or "Unknown" for ip in MONITORING_IP_SET})
-        socketio.emit("update_mac", MONITORING_MAC_DICT)
-        time.sleep(UPDATE_MAC_INTERVAL)
+    if not ip_set:
+        return None
+    
+    filter_condition = " || ".join(f"ip.addr == {ip}" for ip in ip_set)
+    return filter_condition
 
 
 def packet_sniffer():
     """
     지정된 IP에 대해 패킷을 캡처하는 스레드 실행 함수
     """
-    filter_str = " or ".join(f"host {ip}" for ip in MONITORING_IP_SET) if MONITORING_IP_SET else None
-    sniff(prn=process_packet, filter=filter_str, store=False)
+    asyncio.set_event_loop(asyncio.new_event_loop())  # 새로운 이벤트 루프 생성
+    display_filter = generate_ip_filter(MONITORING_IP_SET)
+    capture = pyshark.LiveCapture(interface=interface, display_filter=display_filter)
 
+    for packet in capture.sniff_continuously():
+        try:
+            process_packet(packet)
+        except Exception as e:
+            print(f"[오류] 패킷 처리 중 오류 발생: {e}")
 
 def calculate_throughput():
     """
@@ -237,6 +269,5 @@ def traffic_detail(ip):
 if __name__ == "__main__":
     threading.Thread(target=packet_sniffer, daemon=True).start()
     threading.Thread(target=calculate_throughput, daemon=True).start()
-    threading.Thread(target=update_mac_addresses, daemon=True).start()
 
     socketio.run(app, host="0.0.0.0", port=5002, debug=True)
