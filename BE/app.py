@@ -69,6 +69,7 @@ bitmap_data = {
 N_GRAM = application_detect['N_GRAM']
 VEC_LEN = application_detect['VEC_LEN']
 disc = application_detect['disc']
+DISC_RANGE = 13  # 이산화 구간
 
 # ======================== #
 #       HELPER 함수        #
@@ -118,7 +119,7 @@ def classify_packet(flow_key):
     }
 
     # 🔹 각 클래스별 점수 계산
-    class_scores = {cls: {"total": 0, "inbound": 0, "outbound": 0, "sum": 0} for cls in range(n_classes)}
+    class_scores = {cls: {"total": 0, "inbound": 0, "outbound": 0, "score": 0} for cls in range(n_classes)}
 
     x_data = {key: embedding_packet(X[key]) for key in ["total", "inbound", "outbound"]}
 
@@ -127,7 +128,6 @@ def classify_packet(flow_key):
         cls: sum((x_data[key] & bitmap_data[key][cls]).count(1) for key in ["total", "inbound", "outbound"])
         for cls in range(n_classes)
     }
-
     # 🔹 최고 점수와 해당 클래스 찾기
     max_class, max_score = max(class_scores.items(), key=lambda item: item[1], default=(None, 0))
 
