@@ -141,7 +141,8 @@ def process_packet(packet):
         if hasattr(packet, "ip"):
             src_ip = packet.ip.src
             dst_ip = packet.ip.dst
-            packet_size = int(packet.ip.len) - int(packet.ip.hdr_len)
+            ip_total_length = int(packet.ip.len)
+            ip_header_length = int(packet.ip.hdr_len)
         else:
             return
         
@@ -149,10 +150,15 @@ def process_packet(packet):
             src_port = packet.tcp.srcport
             dst_port = packet.tcp.dstport
             protocol = 6
+            
+            tcp_header_length = int(packet.tcp.hdr_len)
+            packet_size = ip_total_length - ip_header_length - tcp_header_length
         elif hasattr(packet, "udp"):
             src_port = packet.udp.srcport
             dst_port = packet.udp.dstport
             protocol = 17
+
+            packet_size = ip_total_length - ip_header_length - 8
         else:
             return        
 
@@ -188,10 +194,10 @@ def process_packet(packet):
         packet_data[direction][flow_key].append(packet_size)
 
         # 최소 패킷 개수 조건 충족 시 애플리케이션 탐지 실행
-        if len(packet_data["total"][flow_key]) > VEC_LEN:
+        if len(packet_data["total"][flow_key]) > VEC_LEN and sni_dir.get(flow_key) is not None:
             max_class, score = classify_packet(flow_key)
             if max_class is not None:
-                print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, sni={sni_dir.get(flow_key)}")
+                print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, sni={sni_dir.get(flow_key)}, packet_seq={packet_data["total"][flow_key]}")
                 socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
     except Exception as e:
         print(f"[오류] 패킷 처리 중 오류 발생: {e}")
