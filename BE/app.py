@@ -14,6 +14,7 @@ import pickle
 import json
 import numpy as np
 import asyncio
+import datetime
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
@@ -50,9 +51,7 @@ packet_data = {
 app_detect_flag = set()
 
 # 트래픽 데이터 저장소
-traffic_data = {ip: 0 for ip in MONITORING_IP_SET}
-prev_traffic_data = {ip: 0 for ip in MONITORING_IP_SET}
-throughput_data = {ip: 0 for ip in MONITORING_IP_SET}
+packet_history = defaultdict(lambda: defaultdict(list))
 
 # Bitmap 데이터 로드
 with open('bitmap_record.pkl', 'rb') as f:
@@ -133,6 +132,26 @@ def classify_packet(flow_key):
 
     return max_class, max_score
 
+def request_mac_address(ip):
+    """
+    서버의 MAC 주소를 요청하는 함수
+    """
+    socketio.emit("request_mac", ip)
+
+@socketio.on("receive_mac")
+def receive_mac_address(data):
+    """
+    MAC 주소를 수신하는 함수
+    """
+    if not isinstance(data, dict):
+        return
+    if "ip" not in data or "mac" not in data:
+        print(f"[ERROR] 데이터에 'ip' 또는 'mac' 키가 없습니다: {data}")
+        return
+    ip = data["ip"]
+    mac = data["mac"]
+    MONITORING_MAC_DICT[ip] = mac
+
 def process_packet(packet):
     """
     패킷을 분석하고 데이터를 저장하는 함수
@@ -160,12 +179,15 @@ def process_packet(packet):
 
             packet_size = ip_total_length - ip_header_length - 8
         else:
-            return        
-
-        # 트래픽 데이터 갱신
-        for ip in [src_ip, dst_ip]:
-            if ip in MONITORING_IP_SET:
-                traffic_data[ip] += packet_size
+            return
+        
+        # MAC 주소 갱신
+        if src_ip in MONITORING_IP_SET:
+            if hasattr(packet, "eth"):
+                src_mac = packet.eth.src
+                request_mac_address(src_ip)
+                if MONITORING_MAC_DICT.get(src_ip) != src_mac:
+                    socketio.emit("update_mac", [src_ip, src_mac])
 
         direction = get_packet_direction(src_ip, dst_ip, MONITORING_IP_SET)
 
@@ -174,12 +196,6 @@ def process_packet(packet):
             src_port, dst_port = dst_port, src_port
         else:
             packet_size = -packet_size
-        
-        if hasattr(packet, "eth"):
-            src_mac = packet.eth.src
-            if MONITORING_MAC_DICT.get(src_ip) != src_mac:
-                MONITORING_MAC_DICT[src_ip] = src_mac
-                socketio.emit("update_mac", [src_ip, src_mac])
         
         flow_key = (src_ip, src_port, dst_ip, dst_port, protocol)
 
@@ -193,11 +209,14 @@ def process_packet(packet):
         packet_data["total"][flow_key].append(packet_size)
         packet_data[direction][flow_key].append(packet_size)
 
+        timestamp = datetime.datetime.now()
+        packet_history[src_ip][dst_ip].append({"timestamp": timestamp, "size": abs(packet_size)})
+
         # 최소 패킷 개수 조건 충족 시 애플리케이션 탐지 실행
         if len(packet_data["total"][flow_key]) > VEC_LEN and sni_dir.get(flow_key) is not None:
             max_class, score = classify_packet(flow_key)
             if max_class is not None:
-                print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, sni={sni_dir.get(flow_key)}, packet_seq={packet_data["total"][flow_key]}")
+                print(f"[DEBUG] flow_key={flow_key}, max_class={app_list[max_class]}, score={score}, sni={sni_dir.get(flow_key)}")
                 socketio.emit("app_detect", [flow_key[0], app_list[max_class]])
     except Exception as e:
         print(f"[오류] 패킷 처리 중 오류 발생: {e}")
@@ -227,18 +246,44 @@ def packet_sniffer():
         except Exception as e:
             print(f"[오류] 패킷 처리 중 오류 발생: {e}")
 
-def calculate_throughput():
+import json
+
+def clean_old_packets():
     """
-    초당 트래픽량(Throughput)을 계산하고 전송하는 함수
+    오래된 패킷 데이터를 정리하는 함수
     """
     while True:
-        for ip in MONITORING_IP_SET:
-            throughput_data[ip] = traffic_data[ip] - prev_traffic_data[ip]
-            prev_traffic_data[ip] = traffic_data[ip]
+        now = datetime.datetime.now()
+        one_minute_ago = now - datetime.timedelta(minutes=1)
 
-        socketio.emit("update_traffic", throughput_data)
-        time.sleep(1)  # 1초마다 업데이트
+        # 1분 이상 지난 패킷 삭제
+        for src_ip in list(packet_history.keys()):
+            for dst_ip in list(packet_history[src_ip].keys()):
+                packet_history[src_ip][dst_ip] = [
+                    packet for packet in packet_history[src_ip][dst_ip]
+                    if packet["timestamp"] > one_minute_ago
+                ]
 
+                # 만약 특정 dst_ip의 패킷 리스트가 비어 있으면 삭제
+                if not packet_history[src_ip][dst_ip]:
+                    del packet_history[src_ip][dst_ip]
+
+            # 만약 src_ip 아래 모든 dst_ip가 삭제되었으면 src_ip도 삭제
+            if not packet_history[src_ip]:
+                del packet_history[src_ip]
+
+        # JSON 직렬화 가능하도록 datetime -> ISO format 문자열로 변환
+        packet_history_dict = {
+            src_ip: {
+                dst_ip: [{"timestamp": pkt["timestamp"].isoformat(), "size": pkt["size"]} for pkt in packet_list]
+                for dst_ip, packet_list in dst_dict.items()
+            }
+            for src_ip, dst_dict in packet_history.items()
+        }
+
+        socketio.emit("update_traffic", packet_history_dict)
+
+        time.sleep(1)  # 1초마다 실행
 
 # ======================== #
 #          ROUTES         #
@@ -259,14 +304,9 @@ def traffic_detail(ip):
     # 트래픽 데이터 가져오기
     data = {
         "ip": ip,
-        "current_traffic": traffic_data.get(ip, 0),
-        "previous_traffic": prev_traffic_data.get(ip, 0),
-        "throughput": throughput_data.get(ip, 0),
-        "mac_address": MONITORING_MAC_DICT.get(ip, "Unknown"),
     }
 
     return render_template("traffic_detail.html", data=data)
-
 
 # ======================== #
 #      APP 실행 코드       #
@@ -274,6 +314,6 @@ def traffic_detail(ip):
 
 if __name__ == "__main__":
     threading.Thread(target=packet_sniffer, daemon=True).start()
-    threading.Thread(target=calculate_throughput, daemon=True).start()
+    threading.Thread(target=clean_old_packets, daemon=True).start()
 
     socketio.run(app, host="0.0.0.0", port=5002, debug=True)
