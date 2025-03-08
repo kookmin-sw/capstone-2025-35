@@ -90,3 +90,7 @@ MacOS Wi-Fi(학교): 5
 MacOS Wi-Fi(학교): 5
 ### 넷플릭스
 MacOS Wi-Fi(학교): 5
+### SOOP
+MacOS Wi-Fi(학교): 5
+#### Wavve
+MacOS Wi-Fi(학교): 5
