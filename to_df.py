@@ -18,22 +18,22 @@ def int_2_prot(key):
 
     return tmp_dict[key]
 
-def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
+def pcap_2_df(data_path):
+    # PCAP 폴더 이후의 경로를 유지하며 CSV 저장 경로 설정
+    relative_path = data_path.relative_to(data_path.parts[0]) # PCAP 폴더 이후의 경로
+    csv_path = Path("csv") / relative_path.parent
 
-    if verbose:
-        print(f"[DESC] MIN :: {min_val} | MAX :: {max_val}")
-        print('[INFO] Loading PCAP...', end=" ", flush=True)
-    
-    csv_path = Path('csv')
+    # CSV 저장 폴더 생성
+    csv_path.mkdir(parents=True,exist_ok=True)
+
+    # CSV 파일 경로 설정
     csv_file_path = csv_path / data_path.name.replace(".pcap", ".csv")
     if csv_file_path.exists():
+        print(f"[INFO] {csv_file_path} already exists.")
         return
 
     data_path = str(data_path)
-    packets = rdpcap(data_path)
-    
-    if verbose:
-        print("Done.", flush=True)
+    packets = tqdm(rdpcap(data_path))
     
     sessions = OrderedDict()
     initial_ips = {}
@@ -61,11 +61,6 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
                 sessions[session_key] = {'sni': sni, 'data': []}
                 initial_ips[session_key] = (sh_src_ip, sh_dst_ip)
     cap.close()
-
-    packets = tqdm(packets) if verbose else packets
-    
-    if verbose:
-        print('[INFO] Convert PCAP to DataFrame...', flush=True)
         
     for idx, pkt in enumerate(packets):
         if 'IP' not in pkt:
@@ -97,8 +92,6 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
         current_session = sessions[session_key]['data']
         ip1, ip2 = initial_ips[session_key]
         direction = '-' if src_ip == ip1 else  '+'
-            
-        # packet_size = len(pkt)
 
         packet_size = 0
         if pkt.haslayer("TCP"):
@@ -108,7 +101,7 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
         else:
             continue
         
-        current_session += [f'{direction}{packet_size}'] if min_val <= packet_size <= max_val else []
+        current_session += [f'{direction}{packet_size}'] if 0 <= packet_size <= 1600 else []
 
     df_data = []
     
@@ -130,24 +123,48 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
             sni
         ])
 
-    if verbose:
-        print('[INFO] Successfully Converted PCAP to DataFrame.\n\n', flush=True)
-
-    df =  pd.DataFrame(
+    df = pd.DataFrame(
         df_data, columns=['Source IP', 'Source Port', 'Destination IP', 'Destination Port', 'Protocol', 'Rx-Pkts','Tx-Pkts', 'Rx-Bytes', 'Tx-Bytes', "SPLT-Len", "SPLT-Data", "SNI"]
     ).sort_values(by=['Rx-Bytes'], axis=0, ascending=False)
 
-    if df_save:
-        name = os.path.split(data_path)[1]
-        print(f'[INFO] df will be saved at ===>', "./csv")
-                
-        df.to_csv(f'./csv/{name.split(".pcap")[0]}.csv')
+    name = os.path.split(data_path)[1]
+    print(f'[INFO] df will be saved at ===>', csv_file_path)
+            
+    df.to_csv(csv_file_path, index=False)
 
     return df
 
 if __name__ == "__main__":
-    pcap_dir = Path("pcap")
-    pcap_files = list(pcap_dir.glob("*.pcap"))
+    pcap_folder = Path("pcap")
+    pcap_files = list(pcap_folder.glob("**/*.pcap"))
+
+    valid_devices = {"Phone", "PC"}
+    valid_networks = {"WiFi", "Ethernet", "LTE"}
+    valid_filenames = {"MIN", "PARK", "SEO", "JANG", "JEON"}
+
     for pcap_file in pcap_files:
+        parts = pcap_file.parts
+        if len(parts) < 4:
+            print(f"[ERROR] 부적절한 않은 폴더구조: {pcap_file}. 다음과 같이 작성해주세요: 어플리케이션이름/Device/Network/File.pcap")
+            exit(1)
+
+        app_name, device, network, filename = parts[1:5]
+
+        if device not in valid_devices:
+            print(f"[ERROR] 부적절한 디바이스 폴더 이름: '{device}' in {pcap_file}. 다음과 같이 바꿔주세요: {valid_devices}")
+            exit(1)
+
+        if network not in valid_networks:
+            print(f"[ERROR] 부적절한 인터넷 이름: '{network}' in {pcap_file}. 다음과 같이 바꿔주세요: {valid_networks}")
+            exit(1)
+        
+        filename = filename.upper()
+        for valid_filename in valid_filenames:
+            if valid_filename in filename:
+                break
+        else:
+            print(f"[ERROR] 부적절한 파일 이름: '{filename}' in {pcap_file}. 다음과 같이 바꿔주세요: {valid_filenames}")
+            exit(1)
+
         print(f"[INFO] Processing {pcap_file}")
-        pcap_2_df(pcap_file, 0, 1600, verbose=False, df_save=True)
+        pcap_2_df(pcap_file)

@@ -37,7 +37,7 @@ TARGET_APPLICATION = ip_config.get("target_application", {})
 # 설정 값
 UPDATE_MAC_INTERVAL = 10  # MAC 주소 갱신 주기 (초)
 DISC_RANGE = 13  # 이산화 구간
-interface = "en0" # 기기별로 다름
+interface = "이더넷" # 기기별로 다름
 
 mac_list = []
 sni_dir = {}

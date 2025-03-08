@@ -29,3 +29,68 @@ sudo python app.py
 #Linux의 경우 flask_socketio 실행하기 위하여 root 권한 필요
 sudo $(which python) app.py
 ```
+
+# to_df를 사용하기 전 설정
+## pcap 파일 이름 규칙
+pcap 파일 이름을 다음과 같이 해주세요. 
+민수홍: MIN_01.pcap
+박도현: PARK_01.pcap
+서동현: SEO_01.pcap
+장승훈: JANG_01.pcap
+전홍선: JEON_01.pcap
+어플리케이션/기기 종류/인터넷 종류에 따라 폴더를 생성할 것이기 때문에 **성과 순서**만 파일 이름에 저장해주세요
+## pcap 폴더 구조
+```bash
+pcap/                            # 원본 PCAP 파일 저장 폴더
+│── YouTube/                     # 어플리케이션 이름
+│   ├── Phone/                   # 기기 종류
+│   │   ├── WiFi/                # 인터넷 종류
+│   │       ├── MIN_01.pcap
+│   │       ├── MIN_02.pcap
+│   │   
+│   ├── PC/                      # 기기 종류
+│       ├── WiFi/                # 인터넷 종류
+│       │   ├── MIN_01.pcap
+│       │   ├── MIN_02.pcap
+│       ├── Ethernet/
+│           ├── MIN_01.pcap
+│           ├── MIN_02.pcap
+```
+## 명령어
+```bash
+python to_df.py
+```
+## 결과
+```bash
+csv/                              # 변환된 CSV 파일 저장 폴더
+│── YouTube/                      # 어플리케이션 이름
+│   ├── Phone/                    # 기기 종류
+│   │   ├── WiFi/                 # 인터넷 종류
+│   │       ├── MIN_01.csv
+│   │       ├── MIN_02.csv
+│   │ 
+│   ├── PC/                       # 기기 종류
+│       ├── WiFi/
+│       │   ├── MIN_01.csv
+│       │   ├── MIN_02.csv
+│       ├── Ethernet/
+│           ├── MIN_01.csv
+│           ├── MIN_02.csv
+```
+
+# 데이터셋 현황 (자기이름 넣어서 업데이트 해주세요)
+데이터셋 현황 변경은 시에만 master로 push 부탁드립니다
+데이터셋 csv를 올리는 경우 csv 브랜치로 push 해주세요
+## 민수홍
+### 유튜브
+MacOS Wi-Fi(학교): 5
+### 네이버 TV
+MacOS Wi-Fi(학교): 5
+### 쿠팡플레이
+MacOS Wi-Fi(학교): 5
+### 넷플릭스
+MacOS Wi-Fi(학교): 5
+### SOOP
+MacOS Wi-Fi(학교): 5
+#### Wavve
+MacOS Wi-Fi(학교): 5
