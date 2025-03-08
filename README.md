@@ -29,3 +29,9 @@ sudo python app.py
 #Linux의 경우 flask_socketio 실행하기 위하여 root 권한 필요
 sudo $(which python) app.py
 ```
+
+# to_df 사용법
+```bash
+python to_df.py -p pcap\application_name # pcap을 저장하는 pcap\application_name에 저장하길 권장
+```
+csv\application_name에 csv파일이 저장됨
