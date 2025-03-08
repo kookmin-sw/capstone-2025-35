@@ -6,7 +6,6 @@ import os
 import numpy as np
 from pathlib import Path
 from tqdm.auto import tqdm
-import argparse
 
 def int_2_prot(key):
     tmp_dict = {
@@ -20,15 +19,17 @@ def int_2_prot(key):
     return tmp_dict[key]
 
 def pcap_2_df(data_path):
-    
-    csv_path = Path('csv')
+    # PCAP 폴더 이후의 경로를 유지하며 CSV 저장 경로 설정
+    relative_path = data_path.relative_to(data_path.parts[0]) # PCAP 폴더 이후의 경로
+    csv_path = Path("csv") / relative_path.parent
+
+    # CSV 저장 폴더 생성
     csv_path.mkdir(parents=True,exist_ok=True)
 
-    pcap_folder = data_path.parent.name
-    csv_path = csv_path / pcap_folder
-    csv_path.mkdir(parents=True,exist_ok=True)
+    # CSV 파일 경로 설정
     csv_file_path = csv_path / data_path.name.replace(".pcap", ".csv")
     if csv_file_path.exists():
+        print(f"[INFO] {csv_file_path} already exists.")
         return
 
     data_path = str(data_path)
@@ -134,13 +135,8 @@ def pcap_2_df(data_path):
     return df
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="PCAP 데이터프레임 변환")
-    parser.add_argument("-p", type = str, help="PCAP file 경로")
-
-    args = parser.parse_args()
-    pcap_path = Path(args.p)
-    pcap_files = list(pcap_path.glob("*.pcap"))
-
+    pcap_folder = Path("pcap")
+    pcap_files = list(pcap_folder.glob("**/*.pcap"))
     for pcap_file in pcap_files:
         print(f"[INFO] Processing {pcap_file}")
         pcap_2_df(pcap_file)

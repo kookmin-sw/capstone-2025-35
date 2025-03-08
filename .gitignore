@@ -5,3 +5,5 @@ __pycache__/
 BE/monitoring_ip.json
 pcap/
 csv/
+
+Bitmap_Classification_base.ipynb

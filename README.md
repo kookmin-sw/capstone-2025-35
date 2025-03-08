@@ -30,8 +30,40 @@ sudo python app.py
 sudo $(which python) app.py
 ```
 
-# to_df 사용법
+# to_df를 사용하기 전 설정
+## pcap 폴더 구조
 ```bash
-python to_df.py -p pcap\application_name # pcap은 pcap\application_name에 저장하길 권장
+pcap/                            # 원본 PCAP 파일 저장 폴더
+│── YouTube/                     # 어플리케이션 이름
+│   ├── Phone/                   # 기기 종류
+│   │   ├── WiFi/                # 인터넷 종류
+│   │       ├── youtube.pcap
+│   │       ├── youtube2.pcap
+│   │   
+│   ├── PC/                      # 기기 종류
+│       ├── WiFi/                # 인터넷 종류
+│       │   ├── youtube.pcap
+│       │   ├── youtube2.pcap
+│       ├── Ethernet/
+│           ├── youtube.pcap
+│           ├── youtube2.pcap
 ```
-csv\application_name에 csv파일이 저장됨
+```bash
+python to_df.py
+```
+```bash
+csv/                              # 변환된 CSV 파일 저장 폴더
+│── YouTube/                      # 어플리케이션 이름
+│   ├── Phone/                    # 기기 종류
+│   │   ├── WiFi/                 # 인터넷 종류
+│   │       ├── youtube.csv
+│   │       ├── youtube2.csv
+│   │ 
+│   ├── PC/                       # 기기 종류
+│       ├── WiFi/
+│       │   ├── youtube.csv
+│       │   ├── youtube2.csv
+│       ├── Ethernet/
+│           ├── youtube.csv
+│           ├── youtube2.csv
+```
