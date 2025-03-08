@@ -4,6 +4,6 @@ __pycache__/
 .env
 BE/monitoring_ip.json
 pcap/
-csv/
 
 *.ipynb
+
