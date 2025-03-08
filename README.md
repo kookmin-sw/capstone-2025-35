@@ -48,9 +48,11 @@ pcap/                            # 원본 PCAP 파일 저장 폴더
 │           ├── youtube.pcap
 │           ├── youtube2.pcap
 ```
+## 명령어
 ```bash
 python to_df.py
 ```
+## 결과
 ```bash
 csv/                              # 변환된 CSV 파일 저장 폴더
 │── YouTube/                      # 어플리케이션 이름
@@ -67,3 +69,11 @@ csv/                              # 변환된 CSV 파일 저장 폴더
 │           ├── youtube.csv
 │           ├── youtube2.csv
 ```
+
+# 데이터셋 현황 (자기이름 넣어서 업데이트 해주세요)
+데이터셋 변경 시에만 master로 push해주세요 다른건 branch 생성해주세요
+## 민수홍
+### 유튜브
+MacOS Wi-Fi(학교): 5
+### 네이버 TV
+MacOS Wi-Fi(학교): 5
