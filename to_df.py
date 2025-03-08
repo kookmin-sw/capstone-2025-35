@@ -137,6 +137,34 @@ def pcap_2_df(data_path):
 if __name__ == "__main__":
     pcap_folder = Path("pcap")
     pcap_files = list(pcap_folder.glob("**/*.pcap"))
+
+    valid_devices = {"Phone", "PC"}
+    valid_networks = {"WiFi", "Ethernet", "LTE"}
+    valid_filenames = {"MIN", "PARK", "SEO", "JANG", "JEON"}
+
     for pcap_file in pcap_files:
+        parts = pcap_file.parts
+        if len(parts) < 4:
+            print(f"[ERROR] 부적절한 않은 폴더구조: {pcap_file}. 다음과 같이 작성해주세요: 어플리케이션이름/Device/Network/File.pcap")
+            exit(1)
+
+        app_name, device, network, filename = parts[1:5]
+
+        if device not in valid_devices:
+            print(f"[ERROR] 부적절한 디바이스 폴더 이름: '{device}' in {pcap_file}. 다음과 같이 바꿔주세요: {valid_devices}")
+            exit(1)
+
+        if network not in valid_networks:
+            print(f"[ERROR] 부적절한 인터넷 이름: '{network}' in {pcap_file}. 다음과 같이 바꿔주세요: {valid_networks}")
+            exit(1)
+        
+        filename = filename.upper()
+        for valid_filename in valid_filenames:
+            if valid_filename in filename:
+                break
+        else:
+            print(f"[ERROR] 부적절한 파일 이름: '{filename}' in {pcap_file}. 다음과 같이 바꿔주세요: {valid_filenames}")
+            exit(1)
+
         print(f"[INFO] Processing {pcap_file}")
         pcap_2_df(pcap_file)
