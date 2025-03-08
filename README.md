@@ -88,3 +88,5 @@ MacOS Wi-Fi(학교): 5
 MacOS Wi-Fi(학교): 5
 ### 쿠팡플레이
 MacOS Wi-Fi(학교): 5
+### 넷플릭스
+MacOS Wi-Fi(학교): 5
