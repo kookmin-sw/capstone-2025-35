@@ -32,6 +32,6 @@ sudo $(which python) app.py
 
 # to_df 사용법
 ```bash
-python to_df.py -p pcap\application_name # pcap을 저장하는 pcap\application_name에 저장하길 권장
+python to_df.py -p pcap\application_name # pcap은 pcap\application_name에 저장하길 권장
 ```
 csv\application_name에 csv파일이 저장됨
