@@ -1,9 +1,6 @@
-__pycache__/
-*.pyc
-.DS_Store
-.env
-BE/monitoring_ip.json
-pcap/
+# 모든 파일 무시
+*
 
-Bitmap_Classification_base.ipynb
-Torch_Classification_base.ipynb
+# 특정 파일 형식만 포함
+!*.csv
+!*.gitignore
