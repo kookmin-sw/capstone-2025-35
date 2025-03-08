@@ -86,3 +86,5 @@ csv/                              # 변환된 CSV 파일 저장 폴더
 MacOS Wi-Fi(학교): 5
 ### 네이버 TV
 MacOS Wi-Fi(학교): 5
+### 쿠팡플레이
+MacOS Wi-Fi(학교): 5
