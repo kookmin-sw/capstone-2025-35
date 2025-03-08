@@ -6,6 +6,7 @@ import os
 import numpy as np
 from pathlib import Path
 from tqdm.auto import tqdm
+import argparse
 
 def int_2_prot(key):
     tmp_dict = {
@@ -18,22 +19,20 @@ def int_2_prot(key):
 
     return tmp_dict[key]
 
-def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
-
-    if verbose:
-        print(f"[DESC] MIN :: {min_val} | MAX :: {max_val}")
-        print('[INFO] Loading PCAP...', end=" ", flush=True)
+def pcap_2_df(data_path):
     
     csv_path = Path('csv')
+    csv_path.mkdir(parents=True,exist_ok=True)
+
+    pcap_folder = data_path.parent.name
+    csv_path = csv_path / pcap_folder
+    csv_path.mkdir(parents=True,exist_ok=True)
     csv_file_path = csv_path / data_path.name.replace(".pcap", ".csv")
     if csv_file_path.exists():
         return
 
     data_path = str(data_path)
-    packets = rdpcap(data_path)
-    
-    if verbose:
-        print("Done.", flush=True)
+    packets = tqdm(rdpcap(data_path))
     
     sessions = OrderedDict()
     initial_ips = {}
@@ -61,11 +60,6 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
                 sessions[session_key] = {'sni': sni, 'data': []}
                 initial_ips[session_key] = (sh_src_ip, sh_dst_ip)
     cap.close()
-
-    packets = tqdm(packets) if verbose else packets
-    
-    if verbose:
-        print('[INFO] Convert PCAP to DataFrame...', flush=True)
         
     for idx, pkt in enumerate(packets):
         if 'IP' not in pkt:
@@ -97,8 +91,6 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
         current_session = sessions[session_key]['data']
         ip1, ip2 = initial_ips[session_key]
         direction = '-' if src_ip == ip1 else  '+'
-            
-        # packet_size = len(pkt)
 
         packet_size = 0
         if pkt.haslayer("TCP"):
@@ -108,7 +100,7 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
         else:
             continue
         
-        current_session += [f'{direction}{packet_size}'] if min_val <= packet_size <= max_val else []
+        current_session += [f'{direction}{packet_size}'] if 0 <= packet_size <= 1600 else []
 
     df_data = []
     
@@ -130,24 +122,25 @@ def pcap_2_df(data_path, min_val, max_val, verbose=False, df_save=False):
             sni
         ])
 
-    if verbose:
-        print('[INFO] Successfully Converted PCAP to DataFrame.\n\n', flush=True)
-
-    df =  pd.DataFrame(
+    df = pd.DataFrame(
         df_data, columns=['Source IP', 'Source Port', 'Destination IP', 'Destination Port', 'Protocol', 'Rx-Pkts','Tx-Pkts', 'Rx-Bytes', 'Tx-Bytes', "SPLT-Len", "SPLT-Data", "SNI"]
     ).sort_values(by=['Rx-Bytes'], axis=0, ascending=False)
 
-    if df_save:
-        name = os.path.split(data_path)[1]
-        print(f'[INFO] df will be saved at ===>', "./csv")
-                
-        df.to_csv(f'./csv/{name.split(".pcap")[0]}.csv')
+    name = os.path.split(data_path)[1]
+    print(f'[INFO] df will be saved at ===>', csv_file_path)
+            
+    df.to_csv(csv_file_path, index=False)
 
     return df
 
 if __name__ == "__main__":
-    pcap_dir = Path("pcap")
-    pcap_files = list(pcap_dir.glob("*.pcap"))
+    parser = argparse.ArgumentParser(description="PCAP 데이터프레임 변환")
+    parser.add_argument("-p", type = str, help="PCAP file 경로")
+
+    args = parser.parse_args()
+    pcap_path = Path(args.p)
+    pcap_files = list(pcap_path.glob("*.pcap"))
+
     for pcap_file in pcap_files:
         print(f"[INFO] Processing {pcap_file}")
-        pcap_2_df(pcap_file, 0, 1600, verbose=False, df_save=True)
+        pcap_2_df(pcap_file)
