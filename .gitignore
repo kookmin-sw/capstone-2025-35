@@ -1,5 +1,8 @@
-# 1️⃣ 모든 파일과 폴더를 기본적으로 무시
-*
+__pycache__/
+*.pyc
+.DS_Store
+.env
+BE/monitoring_ip.json
+pcap/
 
-!*/
-!*.csv
+*.ipynb
