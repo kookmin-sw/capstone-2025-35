@@ -4,6 +4,7 @@ __pycache__/
 .env
 BE/monitoring_ip.json
 pcap/
+csv/
 
 Bitmap_Classification_base.ipynb
 Torch_Classification_base.ipynb
