@@ -2,6 +2,7 @@ import pyshark
 import logging
 import threading
 import numpy as np
+import asyncio
 from base_sniffer import BaseSniffer
 
 class PysharkSniffer(BaseSniffer):
@@ -78,6 +79,7 @@ class PysharkSniffer(BaseSniffer):
 
         def sniff_packets():
             try:
+                asyncio.set_event_loop(asyncio.new_event_loop())
                 capture = pyshark.LiveCapture(interface=self.interface)
                 for packet in capture.sniff_continuously():
                     self.process_packet(packet)
