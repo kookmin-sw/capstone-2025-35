@@ -4,8 +4,8 @@ from scapy.all import sniff, IP, TCP, UDP
 from base_sniffer import BaseSniffer
 
 class ScapySniffer(BaseSniffer):
-    def __init__(self, interface="en0", bitmap_path="bitmap_record.pkl"):
-        super().__init__(interface, bitmap_path)
+    def __init__(self, socketio, interface="en0", bitmap_path="bitmap_record.pkl"):
+        super().__init__(socketio, interface, bitmap_path)
 
     def process_packet(self, packet):
         """
@@ -46,7 +46,8 @@ class ScapySniffer(BaseSniffer):
             with self.lock:
                 if session_key not in self.sessions:
                     self.sessions[session_key] = {'sni': None, 'data': []}
-
+                
+                self.add_traffic(src_ip, dst_ip, packet_size)
                 self.sessions[session_key]['data'].append(packet_size)
 
                 if len(self.sessions[session_key]['data']) == 20:

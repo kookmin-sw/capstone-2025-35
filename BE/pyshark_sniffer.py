@@ -5,8 +5,8 @@ import numpy as np
 from base_sniffer import BaseSniffer
 
 class PysharkSniffer(BaseSniffer):
-    def __init__(self, interface="en0", bitmap_path="bitmap_record.pkl"):
-        super().__init__(interface, bitmap_path)
+    def __init__(self, socketio, interface="en0", bitmap_path="bitmap_record.pkl"):
+        super().__init__(socketio, interface, bitmap_path)
 
     def handle_tls(self, packet, session_key):
         """
@@ -57,6 +57,7 @@ class PysharkSniffer(BaseSniffer):
                 if session_key not in self.sessions:
                     self.sessions[session_key] = {'sni': None, 'data': []}
                 
+                self.add_traffic(src_ip, dst_ip, packet_size)
                 self.handle_tls(packet, session_key)
 
                 self.sessions[session_key]['data'].append(packet_size)
