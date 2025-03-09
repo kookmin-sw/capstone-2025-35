@@ -8,6 +8,11 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ======================== #
+#          socket         #
+# ======================== #
+
+
+# ======================== #
 #          ROUTES         #
 # ======================== #
 
@@ -37,10 +42,11 @@ def traffic_detail(ip):
 if __name__ == "__main__":
     if SNIFF_LIB == "pyshark":
         from pyshark_sniffer import PysharkSniffer
-        sniffer = PysharkSniffer(interface=INTERFACE, bitmap_path=BITMAP_PATH)
+        sniffer = PysharkSniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)
     elif SNIFF_LIB == "scapy":
         from scapy_sniffer import ScapySniffer
-        sniffer = ScapySniffer(interface=INTERFACE, bitmap_path=BITMAP_PATH)
+        sniffer = ScapySniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)
     threading.Thread(target=sniffer.start_sniffing, daemon=True).start()
+    threading.Thread(target=sniffer.monitor_traffic, daemon=True).start()
 
-    socketio.run(app, host="0.0.0.0", port=5002, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5002, debug=False)
