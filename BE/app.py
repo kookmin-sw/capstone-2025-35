@@ -1,7 +1,6 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
-from pyshark_sniffer import PysharkSniffer
-from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST
+from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB
 import threading
 
 # Flask 및 WebSocket 설정
@@ -36,7 +35,12 @@ def traffic_detail(ip):
 # ======================== #
 
 if __name__ == "__main__":
-    sniffer = PysharkSniffer(interface=INTERFACE, bitmap_path=BITMAP_PATH)
-    threading.Thread(target=sniffer.start_sniffing(), daemon=True).start()
+    if SNIFF_LIB == "pyshark":
+        from pyshark_sniffer import PysharkSniffer
+        sniffer = PysharkSniffer(interface=INTERFACE, bitmap_path=BITMAP_PATH)
+    elif SNIFF_LIB == "scapy":
+        from scapy_sniffer import ScapySniffer
+        sniffer = ScapySniffer(interface=INTERFACE, bitmap_path=BITMAP_PATH)
+    threading.Thread(target=sniffer.start_sniffing, daemon=True).start()
 
     socketio.run(app, host="0.0.0.0", port=5002, debug=True)

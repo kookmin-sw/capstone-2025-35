@@ -5,6 +5,11 @@ from config import DISC_RANGE
 
 class Classification:
     def __init__(self, file_path = 'bitmap_record.pkl'):
+        """
+        분류기 초기화
+        Args:
+            file_path (str): 비트맵 파일 경로
+        """
         with open(file_path, 'rb') as f:
             self.bitmapPKL = pickle.load(f)
         self.CLASSES = self.bitmapPKL['class']
@@ -17,11 +22,15 @@ class Classification:
         self.N_GRAM = self.bitmapPKL['N_GRAM']
         self.VEC_LEN = self.bitmapPKL['VEC_LEN']
         self.disc = self.bitmapPKL['disc']
-        self.predicted = []
     
     def discretize_values(self, value, disc_range):
         """
         값을 이산화하는 함수
+        Args:
+            value (int): 이산화할 값
+            disc_range (list): 이산화 구간
+        Returns:
+            int: 이산화된 값
         """
         if value == 0:
             return DISC_RANGE
@@ -30,6 +39,10 @@ class Classification:
     def embedding_packet(self, packet_seq):
         """
         패킷 데이터를 비트맵으로 변환하는 함수
+        Args:
+            packet_seq (list): 패킷 시퀀스
+        Returns:
+            bitarray: 패킷 비트맵
         """
         dr = len(self.disc)
         L = dr ** self.N_GRAM
@@ -48,14 +61,16 @@ class Classification:
     def predict(self, session_key, packet_total):
         """
         패킷 데이터를 분류하는 함수
+        Args:
+            session_key (str): 세션 키
+            packet_total (np.array): 패킷 시퀀스
+        Returns:
+            tuple: 점수 및 예측 결과
         """
-        if session_key in self.predicted:
-            return None
-        self.predicted.append(session_key)
         packet_total = packet_total[:self.VEC_LEN]
         packet_inbound = packet_total[packet_total > 0]
         packet_outbound = packet_total[packet_total < 0]
-
+        
         total_bitmap = self.embedding_packet(packet_total)
         inbound_bitmap = self.embedding_packet(packet_inbound)
         outbound_bitmap = self.embedding_packet(packet_outbound)
@@ -65,8 +80,6 @@ class Classification:
             scores[idx] = ((total_bitmap & self.BITMAP['total'][idx]).count(1) + 
                            (inbound_bitmap & self.BITMAP['inbound'][idx]).count(1) + 
                            (outbound_bitmap & self.BITMAP['outbound'][idx]).count(1))
-        
         score = np.max(scores)
         
         return score, self.CLASSES[np.argmax(scores)]
-        
