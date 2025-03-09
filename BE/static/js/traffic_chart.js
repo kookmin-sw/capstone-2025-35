@@ -2,6 +2,8 @@ const socket = io.connect("http://localhost:5002");
 const charts = {};  // IP별 차트 저장
 const chartContainers = {}; // IP별 차트 컨테이너 저장
 let macDict = {}; // MAC 주소 저장용 객체
+let maxSize = 80000
+let period = 20
 
 // Chart.js Zoom 플러그인 등록
 Chart.register(ChartZoom);
@@ -52,8 +54,6 @@ function goToDetail(ip) {
 socket.on("traffic_total", function (data) {
     let secondsPassed = data.seconds_passed;
     let trafficData = data.traffic_total;
-    console.log(secondsPassed);
-    console.log(trafficData);
 
     Object.keys(trafficData).forEach((ip) => {
         if (!charts[ip]) {
@@ -61,26 +61,19 @@ socket.on("traffic_total", function (data) {
         }
 
         let chart = charts[ip];
-        let period = trafficData[ip].length;
-        let chartLength = chart.data.labels.length;
-
-        while (chartLength < period - 1) {
-            chart.data.labels.push(secondsPassed - period + chartLength);
-            chart.data.datasets[0].data.push(trafficData[ip][chartLength]);
-            chartLength++;
+        let label = Math.max(0, secondsPassed - period - 1) + chart.data.labels.length;
+        let val = Math.min(Math.max(0, trafficData[ip].length - period - 1) + chart.data.labels.length, period - 1);
+        console.log(label)
+        while (label < secondsPassed) {
+            chart.data.labels.push(label++);
+            chart.data.datasets[0].data.push(trafficData[ip][val++]);
         }
-
-        chart.data.labels.push(secondsPassed - 1);
-        chart.data.datasets[0].data.push(trafficData[ip][period - 1]);
-        console.log(chart.data.labels);
-        console.log(chart.data.datasets[0].data);
-
-        while (chart.data.labels.length > 20) {
+        while (chart.data.labels.length > period) {
             chart.data.labels.shift();
             chart.data.datasets[0].data.shift();
         }
 
-        chart.update(); // 차트 갱신
+        chart.update('none');
     });
 });
 
@@ -115,24 +108,6 @@ function createChart(ip) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: true },
-                zoom: {
-                    pan: {
-                        enabled: true, // 마우스로 패닝 가능
-                        mode: "x",
-                    },
-                    zoom: {
-                        wheel: {
-                            enabled: true, // 마우스 휠로 줌 가능
-                        },
-                        pinch: {
-                            enabled: true, // 터치 줌 가능
-                        },
-                        mode: "x",
-                    },
-                }
-            },
             scales: {
                 x: {
                     display: true,
@@ -141,7 +116,6 @@ function createChart(ip) {
                         text: "경과 시간 (초)"
                     },
                     min: 0,
-                    max: 20,
                 },
                 y: {
                     display: true,

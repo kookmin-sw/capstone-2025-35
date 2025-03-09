@@ -114,4 +114,3 @@ class BaseSniffer:
         트래픽 전송하는 함수
         """
         self.socketio.emit(message, data)
-        logging.info(f"[EMIT] {message} - {data}")
