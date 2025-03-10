@@ -5,6 +5,6 @@ __pycache__/
 .env
 pcap/
 logs/
-.pkl
+*.pkl
 
 *.ipynb
