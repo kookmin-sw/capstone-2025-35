@@ -1,8 +1,10 @@
+BE/config.py
 __pycache__/
 *.pyc
 .DS_Store
 .env
-BE/monitoring_ip.json
 pcap/
+logs/
+*.pkl
 
 *.ipynb

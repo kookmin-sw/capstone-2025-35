@@ -37,12 +37,12 @@ git pull origin csv
 ```
 # to_df를 사용하기 전 설정
 ## pcap 파일 이름 규칙
-pcap 파일 이름을 다음과 같이 해주세요. 
-민수홍: MIN_01.pcap
-박도현: PARK_01.pcap
-서동현: SEO_01.pcap
-장승훈: JANG_01.pcap
-전홍선: JEON_01.pcap
+pcap 파일 이름을 다음과 같이 해주세요.  
+민수홍: MIN_01.pcap  
+박도현: PARK_01.pcap  
+서동현: SEO_01.pcap  
+장승훈: JANG_01.pcap  
+전홍선: JEON_01.pcap  
 어플리케이션/기기 종류/인터넷 종류에 따라 폴더를 생성할 것이기 때문에 **성과 순서**만 파일 이름에 저장해주세요
 ## pcap 폴더 구조
 ```bash

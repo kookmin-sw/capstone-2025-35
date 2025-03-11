@@ -38,7 +38,6 @@ def pcap_2_df(data_path):
     sessions = OrderedDict()
     initial_ips = {}
 
-    sni = None
     cap = pyshark.FileCapture(str(data_path), display_filter='tls.handshake.extensions_server_name')
     for pkt in cap:
         sh_src_ip = None

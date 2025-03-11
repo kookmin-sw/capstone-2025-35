@@ -2,6 +2,8 @@ const socket = io.connect("http://localhost:5002");
 const charts = {};  // IP별 차트 저장
 const chartContainers = {}; // IP별 차트 컨테이너 저장
 let macDict = {}; // MAC 주소 저장용 객체
+let maxSize = 80000
+let period = 20
 
 // Chart.js Zoom 플러그인 등록
 Chart.register(ChartZoom);
@@ -49,41 +51,29 @@ function goToDetail(ip) {
     window.location.href = `/traffic/${ip}`;
 }
 
-// MAC 주소 업데이트 이벤트 리스너 추가
-socket.on("update_mac", function(macData) {
-    let [src_ip, src_mac] = macData;
-    macDict[src_ip] = src_mac;
-    console.log(macDict);
-    updateMacUI(src_ip);
-});
+socket.on("traffic_total", function (data) {
+    let secondsPassed = data.seconds_passed;
+    let trafficData = data.traffic_total;
 
-// 트래픽 업데이트 이벤트 리스너 수정 (스크롤 가능하게 변경)
-socket.on("update_traffic", function(data) {
-    let now = new Date().toLocaleTimeString();
-
-    Object.keys(data).forEach((ip) => {
+    Object.keys(trafficData).forEach((ip) => {
         if (!charts[ip]) {
             createChart(ip);
         }
 
         let chart = charts[ip];
-
-        // X축(시간) 데이터 추가
-        chart.data.labels.push(now);
-
-        // Y축(트래픽) 데이터 추가
-        chart.data.datasets[0].data.push(data[ip]);
-
-        // 최대 20개까지만 유지 (스크롤 가능)
-        if (chart.data.labels.length > 20) {
-            chart.options.scales.x.min++;
-            chart.options.scales.x.max++;
+        let label = Math.max(0, secondsPassed - period - 1) + chart.data.labels.length;
+        let val = Math.min(Math.max(0, trafficData[ip].length - period - 1) + chart.data.labels.length, period - 1);
+        console.log(label)
+        while (label < secondsPassed) {
+            chart.data.labels.push(label++);
+            chart.data.datasets[0].data.push(trafficData[ip][val++]);
+        }
+        while (chart.data.labels.length > period) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
         }
 
-        chart.update();
-
-        // MAC 주소 UI 업데이트
-        updateMacUI(ip);
+        chart.update('none');
     });
 });
 
@@ -108,53 +98,34 @@ function createChart(ip) {
         data: {
             labels: [],
             datasets: [{
+                label: "트래픽 (bytes)",
                 data: [],
                 borderColor: `hsl(${Object.keys(charts).length * 60}, 100%, 50%)`,
+                borderWidth: 2,
                 fill: false
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                zoom: {
-                    pan: {
-                        enabled: true, // 마우스로 패닝 가능
-                        mode: "x",
-                    },
-                    zoom: {
-                        wheel: {
-                            enabled: true, // 마우스 휠로 줌 가능
-                        },
-                        pinch: {
-                            enabled: true, // 터치 줌 가능
-                        },
-                        mode: "x",
-                    },
-                }
-            },
             scales: {
                 x: {
                     display: true,
+                    title: {
+                        display: true,
+                        text: "경과 시간 (초)"
+                    },
                     min: 0,
-                    max: 20,
                 },
                 y: {
                     display: true,
+                    title: {
+                        display: true,
+                        text: "트래픽량 (bytes)"
+                    },
                     beginAtZero: true
                 }
             }
         }
     });
-
-    // MAC 주소 UI 업데이트
-    updateMacUI(ip);
-}
-
-// MAC 주소 UI 업데이트 함수 추가
-function updateMacUI(ip) {
-    if (document.getElementById(`mac-${ip}`)) {
-        document.getElementById(`mac-${ip}`).textContent = macDict[ip] || "Unknown";
-    }
 }
