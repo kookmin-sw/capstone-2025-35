@@ -174,7 +174,7 @@ class BaseSniffer:
             log_path = Path(log_path)
             log_path.mkdir(parents=True, exist_ok=True)
 
-            # 📌 중복 방지를 위해 result_숫자.png 추가
+            # 중복 방지를 위해 result_숫자.png 추가
             i = 1
             if (log_path / f"result_{timestamp}.png").exists():
                 while (log_path / f"result_{timestamp}_{i}.png").exists():
