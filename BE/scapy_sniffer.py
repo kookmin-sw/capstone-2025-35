@@ -31,9 +31,6 @@ class ScapySniffer(BaseSniffer):
             else:
                 return
             
-            if packet_size == 0:
-                return
-            
             direction = self.get_packet_direction(src_ip, dst_ip)
             if direction is None:
                 return
@@ -54,7 +51,9 @@ class ScapySniffer(BaseSniffer):
                 self.sessions[session_key]['data'].append(packet_size)
 
                 if len(self.sessions[session_key]['data']) == 20:
-                    self.prediction(session_key, self.sessions[session_key]['data'])    
+                    score, predict = self.classification.predict(session_key, np.array(self.sessions[session_key]['data'], dtype=np.int16))
+                    self.log_session_info(session_key, score, predict)
+                    self.predicted.append(session_key)
 
         except Exception as e:
             logging.error(f"[ERROR] {e}")

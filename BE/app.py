@@ -1,23 +1,16 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
-from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH
+from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB
 import threading
-import signal
-import os
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ======================== #
-#           ENDS           #
+#          socket         #
 # ======================== #
 
-def signal_handler(sig, frame, sniffer, LOG_PATH):
-    print("프로그램 종료")
-
-    sniffer.visualization(LOG_PATH)
-    exit(0)
 
 # ======================== #
 #          ROUTES         #
@@ -56,5 +49,4 @@ if __name__ == "__main__":
     threading.Thread(target=sniffer.start_sniffing, daemon=True).start()
     threading.Thread(target=sniffer.monitor_traffic, daemon=True).start()
 
-    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, sniffer, LOG_PATH))
     socketio.run(app, host="0.0.0.0", port=5002, debug=False)
