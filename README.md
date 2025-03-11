@@ -29,12 +29,7 @@ sudo python app.py
 #Linux의 경우 flask_socketio 실행하기 위하여 root 권한 필요
 sudo $(which python) app.py
 ```
-## git clone 관련
-```bash
-git branch csv
-git switch csv
-git pull origin csv
-```
+
 # to_df를 사용하기 전 설정
 ## pcap 파일 이름 규칙
 pcap 파일 이름을 다음과 같이 해주세요.  
