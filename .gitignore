@@ -6,6 +6,6 @@ __pycache__/
 pcap/
 logs/
 *.pkl
-csv/
+
 
 *.ipynb
