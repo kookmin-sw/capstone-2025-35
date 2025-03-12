@@ -35,6 +35,7 @@ git branch csv
 git switch csv
 git pull origin csv
 ```
+
 # to_df를 사용하기 전 설정
 ## pcap 파일 이름 규칙
 pcap 파일 이름을 다음과 같이 해주세요.  
@@ -86,16 +87,16 @@ csv/                              # 변환된 CSV 파일 저장 폴더
 # 데이터셋 현황 (자기이름 넣어서 업데이트 해주세요)
 데이터셋 현황 변경은 시에만 master로 push 부탁드립니다
 데이터셋 csv를 올리는 경우 csv 브랜치로 push 해주세요
-## 민수홍
+## 장승훈
 ### 유튜브
-MacOS Wi-Fi(학교): 5
+Linux Wi-Fi(학교): 3
 ### 네이버 TV
-MacOS Wi-Fi(학교): 5
+Linux Wi-Fi(학교): 3
 ### 쿠팡플레이
-MacOS Wi-Fi(학교): 5
+Linux Wi-Fi(학교): 3
 ### 넷플릭스
-MacOS Wi-Fi(학교): 5
+Linux Wi-Fi(학교): 3
 ### SOOP
-MacOS Wi-Fi(학교): 5
+Linux Wi-Fi(학교): 3
 #### Wavve
-MacOS Wi-Fi(학교): 5
+Linux Wi-Fi(학교): 3
