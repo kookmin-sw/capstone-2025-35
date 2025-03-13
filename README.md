@@ -89,14 +89,14 @@ csv/                              # 변환된 CSV 파일 저장 폴더
 데이터셋 csv를 올리는 경우 csv 브랜치로 push 해주세요
 ## 장승훈
 ### 유튜브
-Linux Wi-Fi(학교): 3
+Linux Wi-Fi(학교): 7
 ### 네이버 TV
-Linux Wi-Fi(학교): 3
+Linux Wi-Fi(학교): 6
 ### 쿠팡플레이
-Linux Wi-Fi(학교): 3
+Linux Wi-Fi(학교): 6
 ### 넷플릭스
-Linux Wi-Fi(학교): 3
+Linux Wi-Fi(학교): 6
 ### SOOP
-Linux Wi-Fi(학교): 3
+Linux Wi-Fi(학교): 6
 #### Wavve
-Linux Wi-Fi(학교): 3
+Linux Wi-Fi(학교): 5
