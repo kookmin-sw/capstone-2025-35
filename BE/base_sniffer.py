@@ -155,6 +155,7 @@ class BaseSniffer:
         시각화 함수
         """
         with self.lock:
+            print(self.FN)
             plt.figure(figsize=(12, 6))
             for app_name in self.TP.keys():
                 tp_scores = self.TP[app_name]
