@@ -1,1 +1,2 @@
 .gitignore merge=ours
+BE/config.py merge=ours
