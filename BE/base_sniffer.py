@@ -4,7 +4,10 @@ import numpy as np
 import time
 from collections import OrderedDict, defaultdict, deque
 from classification import Classification
-from config import MONITORING_IP_LIST, MONITORING_PERIOD
+from config import MONITORING_IP_LIST, MONITORING_PERIOD, TARGET_APPLICATIONS
+from datetime import datetime
+from pathlib import Path
+import matplotlib.pyplot as plt
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -24,6 +27,10 @@ class BaseSniffer:
         self.traffic_rate_detail = {src_ip: defaultdict(deque) for src_ip in self.monitoring_ips}
         self.traffic_rate_total = {src_ip: deque() for src_ip in self.monitoring_ips}
         self.socketio = socketio
+
+        self.TP = defaultdict(list)
+        self.FP = defaultdict(list)
+        self.FN = []
 
     def get_packet_direction(self, src_ip, dst_ip):
         """
@@ -114,3 +121,74 @@ class BaseSniffer:
         트래픽 전송하는 함수
         """
         self.socketio.emit(message, data)
+    
+    def prediction(self, session_key, data):
+        """
+        세션 예측 함수
+        """
+        score, predict, score_dict = self.classification.predict(session_key, np.array(data, dtype=np.int16))
+        sni = self.sessions.get(session_key, {}).get('sni', 'None')
+        logging.info(f"세션: {session_key} SNI: {sni} 예측: {predict} 점수: {score}\n상세점수: {score_dict}")
+        self.predicted.append(session_key)
+
+        if sni is not None:
+            matched = False
+
+            for app_sni in TARGET_APPLICATIONS.keys():
+                if app_sni in sni:
+                    real_app = TARGET_APPLICATIONS[app_sni]
+                    matched = True
+                    if predict == real_app:
+                        self.TP[real_app].append(score)
+                        #logging.info(f"예측 성공: {real_app} 점수: {score} 상세 점수: {score_dict}")
+                    else:
+                        self.FP[real_app].append(score)
+                        #logging.info(f"예측 실패: {real_app} 점수: {score} 상세 점수: {score_dict}")
+                    break
+            
+            if not matched:
+                self.FN.append(score)
+                #logging.info(f"실제 앱 미정: {sni} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
+        
+    def visualization(self, log_path):
+        """
+        시각화 함수
+        """
+        with self.lock:
+            plt.figure(figsize=(12, 6))
+            for app_name in self.TP.keys():
+                tp_scores = self.TP[app_name]
+                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP', cumulative=True)
+            for app_name in self.FP.keys():
+                fp_scores = self.FP[app_name]
+                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP', cumulative=True)
+            plt.hist(self.FN, bins=20, alpha=0.5, color='g', label='FN', cumulative=True)
+            plt.legend(loc='upper right')
+            plt.title('Prediction Result')
+            plt.xlabel('Score')
+            plt.ylabel('Count')
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            log_path = Path(log_path)
+            log_path.mkdir(parents=True, exist_ok=True)
+
+            # 📌 중복 방지를 위해 result_숫자.png 추가
+            i = 1
+            if (log_path / f"result_{timestamp}.png").exists():
+                while (log_path / f"result_{timestamp}_{i}.png").exists():
+                    i += 1
+                save_path = log_path / f"result_{timestamp}_{i}.png"
+            else:
+                save_path = log_path / f"result_{timestamp}.png"
+
+            # 📌 그래프 저장
+            plt.savefig(save_path)
+            plt.close()
+
+            logging.info(f"시각화 결과 저장: {save_path}")
+
+            # 데이터 초기화
+            self.TP.clear()
+            self.FP.clear()
+            self.FN.clear()
