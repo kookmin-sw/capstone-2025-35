@@ -75,6 +75,22 @@ class BaseSniffer:
         packet_size = abs(packet_size)
         self.traffic_tmp[src_ip][dst_ip].append(packet_size)
     
+    def handle_packet(self, session_key, packet_size):
+        """
+        패킷 처리
+        """
+        with self.lock:
+            session = self.sessions.setdefault(session_key, {'sni': None, 'data': deque(maxlen=self.classification.VEC_LEN)})
+            
+            self.add_traffic(session_key[0], session_key[2], packet_size)
+            if session_key in self.predicted:
+                return
+            session['data'].append(packet_size)
+
+            if len(session['data']) == self.classification.VEC_LEN:
+                prediction_thread = threading.Thread(target=self.prediction, args=(session_key, session['data']))
+                prediction_thread.start()
+    
     def monitor_traffic(self):
         """
         트래픽 계산하는 함수
@@ -160,7 +176,6 @@ class BaseSniffer:
         시각화 함수
         """
         with self.lock:
-            print(self.FN)
             plt.figure(figsize=(12, 6))
             for app_name in self.TP.keys():
                 tp_scores = self.TP[app_name]
