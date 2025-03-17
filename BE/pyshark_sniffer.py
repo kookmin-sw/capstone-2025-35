@@ -3,6 +3,7 @@ import logging
 import threading
 import numpy as np
 import asyncio
+from collections import deque
 from base_sniffer import BaseSniffer
 
 class PysharkSniffer(BaseSniffer):
@@ -13,9 +14,29 @@ class PysharkSniffer(BaseSniffer):
         """
         TLS SNI 정보를 감지하여 저장
         """
-        if hasattr(packet, "tls") and hasattr(packet.tls, "handshake_extensions_server_name"):
-            self.sessions[session_key]['sni'] = packet.tls.handshake_extensions_server_name
+        if hasattr(packet, "tls"):
+            if hasattr(packet.tls, "handshake_extensions_server_name"):
+                session = self.sessions.setdefault(session_key, {'sni': None, 'data': deque(maxlen=self.classification.VEC_LEN)})
+                session['sni'] = packet.tls.handshake_extensions_server_name
 
+    def get_tcp_info(self, packet):
+        """
+        TCP 패킷 정보 반환
+        """
+        src_port = packet.tcp.srcport
+        dst_port = packet.tcp.dstport
+        packet_size = int(packet.ip.len) - int(packet.ip.hdr_len) - int(packet.tcp.hdr_len)
+        return src_port, dst_port, packet_size, 6
+    
+    def get_udp_info(self, packet):
+        """
+        UDP 패킷 정보 반환
+        """
+        src_port = packet.udp.srcport
+        dst_port = packet.udp.dstport
+        packet_size = int(packet.ip.len) - int(packet.ip.hdr_len) - 8
+        return src_port, dst_port, packet_size, 17
+    
     def process_packet(self, packet):
         """
         Pyshark에서 캡처한 패킷을 처리
@@ -26,25 +47,19 @@ class PysharkSniffer(BaseSniffer):
             
             src_ip = packet.ip.src
             dst_ip = packet.ip.dst
-            ip_len = int(packet.ip.len)
-            ip_hdr_len = int(packet.ip.hdr_len)
 
             direction = self.get_packet_direction(src_ip, dst_ip)
             if direction is None:
                 return
 
             if hasattr(packet, "tcp"):
-                protocol = 6
-                src_port = packet.tcp.srcport
-                dst_port = packet.tcp.dstport
-                tcp_hdr_len = int(packet.tcp.hdr_len)
-                packet_size = ip_len - ip_hdr_len - tcp_hdr_len
+                src_port, dst_port, packet_size, protocol = self.get_tcp_info(packet)
             elif hasattr(packet, "udp"):
-                protocol = 17
-                src_port = packet.udp.srcport
-                dst_port = packet.udp.dstport
-                packet_size = ip_len - ip_hdr_len - 8
+                src_port, dst_port, packet_size, protocol = self.get_udp_info(packet)
             else:
+                return
+            
+            if packet_size == 0:
                 return
 
             if direction == 'inbound':
@@ -54,22 +69,11 @@ class PysharkSniffer(BaseSniffer):
                 packet_size = -packet_size
             session_key = (src_ip, src_port, dst_ip, dst_port, protocol)
 
-            with self.lock:
-                if session_key not in self.sessions:
-                    self.sessions[session_key] = {'sni': None, 'data': []}
-                
-                self.add_traffic(src_ip, dst_ip, packet_size)
-                self.handle_tls(packet, session_key)
-
-                self.sessions[session_key]['data'].append(packet_size)
-
-                if len(self.sessions[session_key]['data']) == self.classification.VEC_LEN:
-                    score, predict = self.classification.predict(session_key, np.array(self.sessions[session_key]['data'], dtype=np.int16))
-                    self.log_session_info(session_key, score, predict)
-                    self.predicted.append(session_key)
+            self.handle_tls(packet, session_key)
+            self.handle_packet(session_key, packet_size)
 
         except Exception as e:
-            logging.error(f"[ERROR] {e}")
+            logging.error(f"[ERROR!] {e}")
 
     def start_sniffing(self):
         """
