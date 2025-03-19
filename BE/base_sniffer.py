@@ -30,7 +30,7 @@ class BaseSniffer:
 
         self.TP = defaultdict(list)
         self.FP = defaultdict(list)
-        self.FN = []
+        self.TN = []
 
     def get_packet_direction(self, src_ip, dst_ip):
         """
@@ -49,6 +49,18 @@ class BaseSniffer:
         TLS 핸드셰이크 정보를 감지하여 세션에 저장 (Pyshark만 적용 가능)
         """
         pass  # PysharkSniffer에서만 구현
+
+    def get_tcp_info(self, packet):
+        """
+        TCP 패킷 정보 반환 (자식 클래스에서 구현 필요)
+        """
+        raise NotImplementedError("get_tcp_info()은 자식 클래스에서 구현해야 합니다.")
+    
+    def get_udp_info(self, packet):
+        """
+        UDP 패킷 정보 반환 (자식 클래스에서 구현 필요)
+        """
+        raise NotImplementedError("get_udp_info()은 자식 클래스에서 구현해야 합니다.")
 
     def process_packet(self, packet):
         """
@@ -168,7 +180,7 @@ class BaseSniffer:
                     break
             
             if not matched:
-                self.FN.append(score)
+                self.TN.append(score)
                 #logging.info(f"실제 앱 미정: {sni} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
         
     def visualization(self, log_path):
@@ -183,11 +195,11 @@ class BaseSniffer:
             for app_name in self.FP.keys():
                 fp_scores = self.FP[app_name]
                 plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP', cumulative=True)
-            plt.hist(self.FN, bins=20, alpha=0.5, color='g', label='FN', cumulative=True)
+            plt.hist(self.TN, bins=20, alpha=0.5, color='g', label='TN', cumulative=True)
             plt.legend(loc='upper right')
             plt.title('Prediction Result')
             plt.xlabel('Score')
-            plt.ylabel('Count')
+            plt.ylabel('Collision')
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -212,4 +224,4 @@ class BaseSniffer:
             # 데이터 초기화
             self.TP.clear()
             self.FP.clear()
-            self.FN.clear()
+            self.TN.clear()
