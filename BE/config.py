@@ -5,7 +5,7 @@ INTERFACE = "en0"  # 네트워크 인터페이스
 MONITORING_IP_LIST = ["192.168.219.171"]
 MONITORING_PERIOD = 20  # 모니터링 주기 (초)
 SNIFF_LIB = "pyshark"
-BITMAP_PATH = "bitmap_record.pkl"
+BITMAP_PATH = "bitmap_0318_1549.pkl"
 LOG_PATH = "../logs"
 TARGET_APPLICATIONS = {
     "googlevideo.com" : "youtube",
@@ -14,4 +14,5 @@ TARGET_APPLICATIONS = {
     "naver-vod.pstatic.net": "navertv",
     "vod.cdn.wavve.com": "wavve",
     "vod02-cosmos.coupangstreaming.com": "coupangplay",
+    "fbcdn.net": "instagram",
 }
