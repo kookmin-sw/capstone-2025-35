@@ -3,6 +3,7 @@ import logging
 import threading
 import numpy as np
 import asyncio
+import argparse
 from collections import deque
 from base_sniffer import BaseSniffer
 
@@ -92,3 +93,29 @@ class PysharkSniffer(BaseSniffer):
 
         sniffing_thread = threading.Thread(target=sniff_packets, daemon=True)
         sniffing_thread.start()
+    
+    def handle_pcap(self, pcap):
+        """
+        Pyshark를 이용하여 pcap 파일 처리
+        """
+        logging.info(f"Pyshark로 pcap 파일 처리: {pcap}")
+        try:
+            cap = pyshark.FileCapture(pcap)
+            for packet in cap:
+                self.process_packet(packet)
+        except Exception as e:
+            logging.error(f"[ERROR] pcap 파일 처리 중 오류 발생: {e}")
+    
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-f", "--file", help="pcap 파일 경로")
+
+    args = parser.parse_args()
+    if args.file:
+        logging.basicConfig(level=logging.INFO)
+        sniffer = PysharkSniffer(None)
+        sniffer.handle_pcap(args.file)
+        sniffer.visualization("../logs")
+    else:
+        print("pcap 파일 경로를 입력해주세요.")

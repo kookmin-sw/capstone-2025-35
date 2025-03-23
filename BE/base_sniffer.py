@@ -186,15 +186,15 @@ class BaseSniffer:
             plt.figure(figsize=(12, 6))
             for app_name in self.TP.keys():
                 tp_scores = self.TP[app_name]
-                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP', cumulative=True)
+                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP')
             for app_name in self.FP.keys():
                 fp_scores = self.FP[app_name]
-                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP', cumulative=True)
-            plt.hist(self.TN, bins=20, alpha=0.5, color='g', label='TN', cumulative=True)
+                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP')
+            plt.hist(self.TN, bins=20, alpha=0.5, color='g', label='TN')
             plt.legend(loc='upper right')
             plt.title('Prediction Result')
-            plt.xlabel('Score')
-            plt.ylabel('Collision')
+            plt.xlabel('Collision')
+            plt.ylabel('Count')
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
