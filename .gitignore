@@ -4,5 +4,6 @@ __pycache__/
 .env
 pcap/
 logs/
+csv/
 
 *.ipynb
