@@ -11,14 +11,21 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 데모 데이터
-MONITORING_IP_LIST = ["192.168.1.100", "192.168.1.101"]
+MONITORING_IP_LIST = ["192.168.1.100", "192.168.1.101", "192.168.1.102"]
 MAC_DICT = {
     "192.168.1.100": "00:1A:2B:3C:4D:5E",
-    "192.168.1.101": "AA:BB:CC:DD:EE:FF"
+    "192.168.1.101": "AA:BB:CC:DD:EE:FF",
+    "192.168.1.102": "11:22:33:44:55:66"
 }
 STREAMING_SERVICES = {
     "192.168.1.100": ["youtube", "netflix"],
-    "192.168.1.101": ["wavve", "coupangplay"]
+    "192.168.1.101": ["wavve", "coupangplay"],
+    "192.168.1.102": ["navertv"]
+}
+HOSTNAMES = {
+    "192.168.1.100": "desktop-pc.local",
+    "192.168.1.101": "smartphone.local",
+    "192.168.1.102": "smart-tv.local"
 }
 
 # 전역 변수
@@ -53,6 +60,30 @@ def traffic_detail(ip):
 #      데모 데이터 생성     #
 # ======================== #
 
+def generate_traffic_pattern(time_passed, base_traffic=50000, noise_level=20000):
+    """시간에 따른 트래픽 패턴 생성"""
+    # 기본 트래픽 + 랜덤 노이즈
+    noise = random.randint(-noise_level, noise_level)
+    
+    # 주기적인 트래픽 스파이크 (20초마다)
+    if time_passed % 20 < 3:
+        spike = random.randint(100000, 500000)
+    else:
+        spike = 0
+    
+    # 시간대별 패턴 (낮에는 트래픽이 더 많음)
+    hour = datetime.now().hour
+    time_factor = 1.0
+    if 9 <= hour <= 18:  # 업무 시간
+        time_factor = 1.5
+    elif 19 <= hour <= 23:  # 저녁 시간 (스트리밍 많음)
+        time_factor = 2.0
+    elif 0 <= hour <= 5:  # 새벽 (트래픽 적음)
+        time_factor = 0.5
+    
+    traffic_value = max(0, int((base_traffic + noise + spike) * time_factor))
+    return traffic_value
+
 def generate_traffic_data():
     """랜덤 트래픽 데이터 생성"""
     global seconds_passed
@@ -62,17 +93,18 @@ def generate_traffic_data():
         
         # 각 IP에 대한 트래픽 데이터 생성
         for ip in MONITORING_IP_LIST:
-            # 기본 트래픽 + 랜덤 노이즈
-            base_traffic = 50000  # 50KB 기본값
-            noise = random.randint(-20000, 40000)
-            
-            # 주기적인 트래픽 스파이크 (20초마다)
-            if seconds_passed % 20 < 3:
-                spike = random.randint(100000, 500000)
-            else:
-                spike = 0
+            # IP별로 다른 트래픽 패턴 생성
+            if ip == "192.168.1.100":  # 데스크톱 PC (높은 트래픽)
+                base_traffic = 80000
+                noise_level = 30000
+            elif ip == "192.168.1.101":  # 스마트폰 (중간 트래픽)
+                base_traffic = 40000
+                noise_level = 15000
+            else:  # 스마트 TV (낮은 트래픽, 가끔 스파이크)
+                base_traffic = 20000
+                noise_level = 10000
                 
-            traffic_value = max(0, base_traffic + noise + spike)
+            traffic_value = generate_traffic_pattern(seconds_passed, base_traffic, noise_level)
             
             if len(traffic_data[ip]) > 100:
                 traffic_data[ip] = traffic_data[ip][-100:]
@@ -86,6 +118,28 @@ def generate_traffic_data():
             'detected_services': list(STREAMING_SERVICES.values())[0]  # 데모용
         })
         
+        # MAC 주소 업데이트 (10초마다)
+        if seconds_passed % 10 == 0:
+            socketio.emit('mac_update', {
+                'mac_dict': MAC_DICT
+            })
+        
+        # 호스트명 업데이트 (15초마다)
+        if seconds_passed % 15 == 0:
+            for ip in MONITORING_IP_LIST:
+                socketio.emit('hostname_update', {
+                    'ip': ip,
+                    'hostname': HOSTNAMES[ip]
+                })
+        
+        # 스트리밍 서비스 감지 (30초마다)
+        if seconds_passed % 30 == 0:
+            for ip, services in STREAMING_SERVICES.items():
+                socketio.emit('streaming_detection', {
+                    'ip': ip,
+                    'services': services
+                })
+        
         # 상세 트래픽 데이터 전송 (각 IP별)
         for ip in MONITORING_IP_LIST:
             download = random.randint(10000, 100000)
@@ -97,58 +151,60 @@ def generate_traffic_data():
                 'upload': upload
             })
             
-            # 프로토콜 통계
-            socketio.emit('protocol_stats', {
-                'ip': ip,
-                'tcp': random.randint(50, 200),
-                'udp': random.randint(20, 100),
-                'icmp': random.randint(0, 10),
-                'other': random.randint(0, 5)
-            })
+            # 프로토콜 통계 (5초마다)
+            if seconds_passed % 5 == 0:
+                socketio.emit('protocol_stats', {
+                    'ip': ip,
+                    'tcp': random.randint(50, 200),
+                    'udp': random.randint(20, 100),
+                    'icmp': random.randint(0, 10),
+                    'other': random.randint(0, 5)
+                })
             
-            # 포트 통계
-            ports = {}
-            for port in [80, 443, 8080, 22, 53]:
-                ports[port] = random.randint(10, 100)
+            # 포트 통계 (8초마다)
+            if seconds_passed % 8 == 0:
+                ports = {}
+                common_ports = [80, 443, 8080, 22, 53, 3389, 21, 25, 110, 143]
+                for port in common_ports:
+                    ports[port] = random.randint(10, 100)
+                
+                socketio.emit('port_stats', {
+                    'ip': ip,
+                    'ports': ports
+                })
             
-            socketio.emit('port_stats', {
-                'ip': ip,
-                'ports': ports
-            })
-            
-            # 패킷 로그
-            packet = {
-                'time': datetime.now().timestamp() * 1000,
-                'source': f"192.168.1.{random.randint(1, 254)}",
-                'destination': ip,
-                'protocol': random.choice(['TCP', 'UDP', 'HTTP', 'DNS']),
-                'size': random.randint(64, 1500),
-                'info': f"Sample packet info {random.randint(1000, 9999)}"
-            }
-            
-            socketio.emit('packet_log', {
-                'ip': ip,
-                'packet': packet
-            })
-        
-        # MAC 주소 업데이트
-        socketio.emit('mac_update', {
-            'mac_dict': MAC_DICT
-        })
-        
-        # 호스트명 업데이트
-        for ip in MONITORING_IP_LIST:
-            socketio.emit('hostname_update', {
-                'ip': ip,
-                'hostname': f"host-{ip.split('.')[-1]}.local"
-            })
-        
-        # 스트리밍 서비스 감지
-        for ip, services in STREAMING_SERVICES.items():
-            socketio.emit('streaming_detection', {
-                'ip': ip,
-                'services': services
-            })
+            # 패킷 로그 (2초마다)
+            if seconds_passed % 2 == 0:
+                protocols = ['TCP', 'UDP', 'HTTP', 'DNS', 'HTTPS', 'ICMP']
+                protocol = random.choice(protocols)
+                
+                # 프로토콜에 따른 정보 생성
+                if protocol == 'TCP':
+                    info = random.choice(['SYN', 'ACK', 'SYN-ACK', 'FIN', 'RST'])
+                elif protocol == 'UDP':
+                    info = f"Source Port: {random.randint(1024, 65535)}, Dest Port: {random.randint(1, 1023)}"
+                elif protocol == 'HTTP':
+                    info = random.choice(['GET /', 'POST /api', 'PUT /data', 'DELETE /resource'])
+                elif protocol == 'DNS':
+                    info = random.choice(['A Record Query', 'AAAA Record Query', 'MX Record Query', 'Response'])
+                elif protocol == 'HTTPS':
+                    info = random.choice(['TLS Handshake', 'Client Hello', 'Server Hello', 'Certificate'])
+                else:  # ICMP
+                    info = random.choice(['Echo Request', 'Echo Reply', 'Destination Unreachable'])
+                
+                packet = {
+                    'time': datetime.now().timestamp() * 1000,
+                    'source': f"192.168.1.{random.randint(1, 254)}",
+                    'destination': ip,
+                    'protocol': protocol,
+                    'size': random.randint(64, 1500),
+                    'info': info
+                }
+                
+                socketio.emit('packet_log', {
+                    'ip': ip,
+                    'packet': packet
+                })
         
         time.sleep(1)  # 1초마다 업데이트
 

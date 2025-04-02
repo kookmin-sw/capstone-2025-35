@@ -189,7 +189,20 @@ function getTrafficStatusColor(bytesPerSecond) {
     return '#2ecc71'; // 낮음 (초록)
 }
 
-// 소켓 이벤트 처리: 트래픽 데이터 수신
+/**
+ * 소켓 이벤트 처리: 트래픽 데이터 수신
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   seconds_passed: Number,  // 모니터링 시작 이후 경과 시간(초)
+ *   traffic_total: {         // IP별 트래픽 데이터
+ *     "192.168.1.1": [123, 456, 789, ...],  // 각 초마다의 트래픽 바이트 수
+ *     "192.168.1.2": [234, 567, 890, ...],
+ *     ...
+ *   },
+ *   detected_services: ["youtube", "netflix", ...]  // 감지된 스트리밍 서비스 목록 (선택적)
+ * }
+ */
 socket.on("traffic_total", function (data) {
     let secondsPassed = data.seconds_passed;
     let trafficData = data.traffic_total;
@@ -252,13 +265,24 @@ socket.on("traffic_total", function (data) {
     // 총 트래픽량 업데이트
     updateTotalTraffic(newTrafficBytes);
     
-    // 스트리밍 서비스 감지 (예시 - 실제로는 서버에서 받아야 함)
+    // 스트리밍 서비스 감지
     if (data.detected_services) {
         updateDetectedStreaming(data.detected_services);
     }
 });
 
-// MAC 주소 업데이트 이벤트
+/**
+ * MAC 주소 업데이트 이벤트
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   mac_dict: {
+ *     "192.168.1.1": "00:1A:2B:3C:4D:5E",
+ *     "192.168.1.2": "AA:BB:CC:DD:EE:FF",
+ *     ...
+ *   }
+ * }
+ */
 socket.on("mac_update", function(data) {
     macDict = data.mac_dict;
     
@@ -271,7 +295,15 @@ socket.on("mac_update", function(data) {
     });
 });
 
-// 스트리밍 서비스 감지 이벤트
+/**
+ * 스트리밍 서비스 감지 이벤트
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   ip: "192.168.1.1",  // 감지된 IP 주소
+ *   services: ["youtube", "netflix", ...]  // 해당 IP에서 감지된 스트리밍 서비스 목록
+ * }
+ */
 socket.on("streaming_detection", function(data) {
     const ip = data.ip;
     const services = data.services;
@@ -286,6 +318,90 @@ socket.on("streaming_detection", function(data) {
         
         updateDetectedStreaming(services);
     }
+});
+
+/**
+ * 호스트명 업데이트 이벤트 (traffic_detail.html 페이지에서 사용)
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   ip: "192.168.1.1",  // IP 주소
+ *   hostname: "device-name.local"  // 호스트명
+ * }
+ */
+socket.on("hostname_update", function(data) {
+    const hostnameElement = document.getElementById('hostname');
+    if (hostnameElement && data.hostname) {
+        hostnameElement.textContent = data.hostname;
+    }
+});
+
+/**
+ * 상세 트래픽 데이터 이벤트 (traffic_detail.html 페이지에서 사용)
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   ip: "192.168.1.1",  // IP 주소
+ *   download: 12345,    // 다운로드 트래픽 (bytes)
+ *   upload: 6789        // 업로드 트래픽 (bytes)
+ * }
+ */
+socket.on("traffic_detail", function(data) {
+    // traffic_detail.html 페이지에서 처리
+});
+
+/**
+ * 프로토콜 통계 이벤트 (traffic_detail.html 페이지에서 사용)
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   ip: "192.168.1.1",  // IP 주소
+ *   tcp: 123,           // TCP 패킷 수
+ *   udp: 456,           // UDP 패킷 수
+ *   icmp: 7,            // ICMP 패킷 수
+ *   other: 8            // 기타 프로토콜 패킷 수
+ * }
+ */
+socket.on("protocol_stats", function(data) {
+    // traffic_detail.html 페이지에서 처리
+});
+
+/**
+ * 포트 통계 이벤트 (traffic_detail.html 페이지에서 사용)
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   ip: "192.168.1.1",  // IP 주소
+ *   ports: {
+ *     "80": 123,        // 포트 번호: 패킷 수
+ *     "443": 456,
+ *     "8080": 78,
+ *     ...
+ *   }
+ * }
+ */
+socket.on("port_stats", function(data) {
+    // traffic_detail.html 페이지에서 처리
+});
+
+/**
+ * 패킷 로그 이벤트 (traffic_detail.html 페이지에서 사용)
+ * 
+ * 백엔드에서 전송해야 하는 데이터 형식:
+ * {
+ *   ip: "192.168.1.1",  // IP 주소
+ *   packet: {
+ *     time: 1616123456789,  // 타임스탬프 (밀리초)
+ *     source: "192.168.1.5",  // 출발지 IP
+ *     destination: "192.168.1.1",  // 목적지 IP
+ *     protocol: "TCP",  // 프로토콜
+ *     size: 1234,       // 패킷 크기 (bytes)
+ *     info: "SYN, ACK"  // 추가 정보
+ *   }
+ * }
+ */
+socket.on("packet_log", function(data) {
+    // traffic_detail.html 페이지에서 처리
 });
 
 // 메인 차트 생성
