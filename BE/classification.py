@@ -75,11 +75,16 @@ class Classification:
         inbound_bitmap = self.embedding_packet(packet_inbound)
         outbound_bitmap = self.embedding_packet(packet_outbound)
         scores = np.zeros(self.N_CLASSES)  # 점수 배열 초기화
+        score_dict = {}
 
         for idx in range(self.N_CLASSES):
-            scores[idx] = ((total_bitmap & self.BITMAP['total'][idx]).count(1) + 
-                           (inbound_bitmap & self.BITMAP['inbound'][idx]).count(1) + 
-                           (outbound_bitmap & self.BITMAP['outbound'][idx]).count(1))
+            total_score = (total_bitmap & self.BITMAP['total'][idx]).count(1)
+            inbound_score = (inbound_bitmap & self.BITMAP['inbound'][idx]).count(1)
+            outbound_score = (outbound_bitmap & self.BITMAP['outbound'][idx]).count(1)
+            scores[idx] = round((total_score + inbound_score + outbound_score))
+            score_dict[self.CLASSES[idx]] = ((total_score, self.BITMAP['total'][idx].count(1)), 
+                                             (inbound_score, self.BITMAP['inbound'][idx].count(1)), 
+                                             (outbound_score, self.BITMAP['outbound'][idx].count(1)))
         score = np.max(scores)
         
-        return score, self.CLASSES[np.argmax(scores)]
+        return score, self.CLASSES[np.argmax(scores)], score_dict[self.CLASSES[np.argmax(scores)]]

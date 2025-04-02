@@ -46,6 +46,9 @@ class PysharkSniffer(BaseSniffer):
                 packet_size = ip_len - ip_hdr_len - 8
             else:
                 return
+            
+            if packet_size == 0:
+                return
 
             if direction == 'inbound':
                 src_ip, dst_ip = dst_ip, src_ip
@@ -64,9 +67,7 @@ class PysharkSniffer(BaseSniffer):
                 self.sessions[session_key]['data'].append(packet_size)
 
                 if len(self.sessions[session_key]['data']) == self.classification.VEC_LEN:
-                    score, predict = self.classification.predict(session_key, np.array(self.sessions[session_key]['data'], dtype=np.int16))
-                    self.log_session_info(session_key, score, predict)
-                    self.predicted.append(session_key)
+                    self.prediction(session_key, self.sessions[session_key]['data'])
 
         except Exception as e:
             logging.error(f"[ERROR] {e}")
