@@ -2,13 +2,12 @@ import threading
 import logging
 import numpy as np
 import time
-import logging
-from pathlib import Path
-from datetime import datetime
 from collections import OrderedDict, defaultdict, deque
 from classification import Classification
-import matplotlib.pyplot as plt
 from config import MONITORING_IP_LIST, MONITORING_PERIOD, TARGET_APPLICATIONS
+from datetime import datetime
+from pathlib import Path
+import matplotlib.pyplot as plt
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -31,7 +30,7 @@ class BaseSniffer:
 
         self.TP = defaultdict(list)
         self.FP = defaultdict(list)
-        self.FN = []
+        self.TN = []
 
     def get_packet_direction(self, src_ip, dst_ip):
         """
@@ -51,6 +50,18 @@ class BaseSniffer:
         """
         pass  # PysharkSniffer에서만 구현
 
+    def get_tcp_info(self, packet):
+        """
+        TCP 패킷 정보 반환 (자식 클래스에서 구현 필요)
+        """
+        raise NotImplementedError("get_tcp_info()은 자식 클래스에서 구현해야 합니다.")
+    
+    def get_udp_info(self, packet):
+        """
+        UDP 패킷 정보 반환 (자식 클래스에서 구현 필요)
+        """
+        raise NotImplementedError("get_udp_info()은 자식 클래스에서 구현해야 합니다.")
+
     def process_packet(self, packet):
         """
         패킷을 처리하는 함수 (자식 클래스에서 구현 필요)
@@ -61,7 +72,7 @@ class BaseSniffer:
         """
         세션 정보를 로깅하는 함수
         """
-        
+        logging.info(f"세션: {session_key} 예측: {predict} 점수: {score} SNI: {self.sessions.get(session_key, {}).get('sni', 'None')}")
 
     def start_sniffing(self):
         """
@@ -75,6 +86,22 @@ class BaseSniffer:
         """
         packet_size = abs(packet_size)
         self.traffic_tmp[src_ip][dst_ip].append(packet_size)
+    
+    def handle_packet(self, session_key, packet_size):
+        """
+        패킷 처리
+        """
+        with self.lock:
+            session = self.sessions.setdefault(session_key, {'sni': None, 'data': deque(maxlen=self.classification.VEC_LEN)})
+            
+            self.add_traffic(session_key[0], session_key[2], packet_size)
+            if session_key in self.predicted:
+                return
+            session['data'].append(packet_size)
+
+            if len(session['data']) == self.classification.VEC_LEN:
+                prediction_thread = threading.Thread(target=self.prediction, args=(session_key, session['data']))
+                prediction_thread.start()
     
     def monitor_traffic(self):
         """
@@ -148,7 +175,7 @@ class BaseSniffer:
                     break
             
             if not matched:
-                self.FN.append(score)
+                self.TN.append(score)
                 #logging.info(f"실제 앱 미정: {sni} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
         
     def visualization(self, log_path):
@@ -159,14 +186,14 @@ class BaseSniffer:
             plt.figure(figsize=(12, 6))
             for app_name in self.TP.keys():
                 tp_scores = self.TP[app_name]
-                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP', cumulative=True)
+                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP')
             for app_name in self.FP.keys():
                 fp_scores = self.FP[app_name]
-                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP', cumulative=True)
-            plt.hist(self.FN, bins=20, alpha=0.5, color='g', label='FN', cumulative=True)
+                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP')
+            plt.hist(self.TN, bins=20, alpha=0.5, color='g', label='TN')
             plt.legend(loc='upper right')
             plt.title('Prediction Result')
-            plt.xlabel('Score')
+            plt.xlabel('Collision')
             plt.ylabel('Count')
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -192,4 +219,4 @@ class BaseSniffer:
             # 데이터 초기화
             self.TP.clear()
             self.FP.clear()
-            self.FN.clear()
+            self.TN.clear()
