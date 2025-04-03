@@ -57,16 +57,17 @@ class PysharkSniffer(BaseSniffer):
                 packet_size = -packet_size
             session_key = (src_ip, src_port, dst_ip, dst_port, protocol)
 
-            if session_key not in self.sessions:
-                self.sessions[session_key] = {'sni': None, 'data': []}
-            
-            self.add_traffic(src_ip, dst_ip, packet_size)
-            self.handle_tls(packet, session_key)
+            with self.lock:
+                if session_key not in self.sessions:
+                    self.sessions[session_key] = {'sni': None, 'data': []}
+                
+                self.add_traffic(src_ip, dst_ip, packet_size)
+                self.handle_tls(packet, session_key)
 
-            self.sessions[session_key]['data'].append(packet_size)
+                self.sessions[session_key]['data'].append(packet_size)
 
-            if len(self.sessions[session_key]['data']) == self.classification.VEC_LEN:
-                self.prediction(session_key, self.sessions[session_key]['data'])
+                if len(self.sessions[session_key]['data']) == self.classification.VEC_LEN:
+                    self.prediction(session_key, self.sessions[session_key]['data'])
 
         except Exception as e:
             logging.error(f"[ERROR] {e}")

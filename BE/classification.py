@@ -22,25 +22,6 @@ class Classification:
         self.N_GRAM = self.bitmapPKL['N_GRAM']
         self.VEC_LEN = self.bitmapPKL['VEC_LEN']
         self.disc = self.bitmapPKL['disc']
-        self.compute_weight()
-
-    def compute_weight(self):
-        """
-        비트맵의 가중치를 계산하는 함수
-        Args:
-            bitmap (bitarray): 비트맵
-        Returns:
-            array: 가중치 배열
-        """
-        bitmap_count = []
-        for idx in range(self.N_CLASSES):
-            bitmap_count.append(self.BITMAP['total'][idx].count(1))
-        weights = [1 / count for count in bitmap_count]
-        weights = [w / sum(weights) for w in weights]
-
-        weights = [round(w, 3) * 10 for w in weights]
-
-        self.weights = weights
     
     def discretize_values(self, value, disc_range):
         """
@@ -107,11 +88,3 @@ class Classification:
         score = np.max(scores)
         
         return score, self.CLASSES[np.argmax(scores)], score_dict[self.CLASSES[np.argmax(scores)]]
-
-if __name__ == "__main__":
-    classification = Classification(file_path='bitmap_school.pkl')
-    for n in range(classification.N_CLASSES):
-        print(classification.CLASSES[n])
-        print(classification.BITMAP['total'][n].count(1))
-        print(classification.BITMAP['inbound'][n].count(1))
-        print(classification.BITMAP['outbound'][n].count(1))

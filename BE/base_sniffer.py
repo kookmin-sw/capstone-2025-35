@@ -2,13 +2,12 @@ import threading
 import logging
 import numpy as np
 import time
-import logging
-from pathlib import Path
-from datetime import datetime
 from collections import OrderedDict, defaultdict, deque
 from classification import Classification
-import matplotlib.pyplot as plt
 from config import MONITORING_IP_LIST, MONITORING_PERIOD, TARGET_APPLICATIONS
+from datetime import datetime
+from pathlib import Path
+import matplotlib.pyplot as plt
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -61,7 +60,7 @@ class BaseSniffer:
         """
         세션 정보를 로깅하는 함수
         """
-        
+        logging.info(f"세션: {session_key} 예측: {predict} 점수: {score} SNI: {self.sessions.get(session_key, {}).get('sni', 'None')}")
 
     def start_sniffing(self):
         """
@@ -156,6 +155,7 @@ class BaseSniffer:
         시각화 함수
         """
         with self.lock:
+            print(self.FN)
             plt.figure(figsize=(12, 6))
             for app_name in self.TP.keys():
                 tp_scores = self.TP[app_name]
