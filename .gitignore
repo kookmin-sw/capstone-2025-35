@@ -4,7 +4,8 @@ __pycache__/
 .DS_Store
 .env
 pcap/
+csv/
 logs/
 *.pkl
-
+csv/
 *.ipynb
