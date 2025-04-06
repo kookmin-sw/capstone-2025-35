@@ -218,4 +218,4 @@ if __name__ == "__main__":
         print(f"[INFO] Processing {pcap_file}")
 
         todf = to_df(app_name, pcap_file)
-        todf.pcap_2_df(duplicate=False)
+        todf.pcap_2_df(duplicate=True)

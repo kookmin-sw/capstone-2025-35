@@ -159,6 +159,11 @@ class BaseSniffer:
         logging.info(f"세션: {session_key} SNI: {sni} 예측: {predict} 점수: {score}\n상세점수: {score_dict}")
         self.predicted.append(session_key)
 
+        self.socketio.emit("streaming_detection", {
+            'ip': session_key[0],
+            'services': [predict],
+        })
+
         if sni is not None:
             matched = False
 
