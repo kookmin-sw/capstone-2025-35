@@ -5,7 +5,7 @@ INTERFACE = "en0"  # 네트워크 인터페이스
 MONITORING_IP_LIST = ["10.221.97.32"]
 MONITORING_PERIOD = 20  # 모니터링 주기 (초)
 SNIFF_LIB = "pyshark"
-BITMAP_PATH = "bitmap_record.pkl"
+BITMAP_PATH = "../pkl/bitmap_record.pkl"
 LOG_PATH = "../logs"
 TARGET_APPLICATIONS = {
     "googlevideo.com" : "youtube",

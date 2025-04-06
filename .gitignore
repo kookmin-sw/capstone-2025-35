@@ -6,6 +6,8 @@ __pycache__/
 pcap/
 csv/
 logs/
+plot/
+
 *.pkl
 csv/
 *.ipynb
