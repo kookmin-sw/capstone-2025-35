@@ -58,7 +58,7 @@ class Classification:
 
         return res
     
-    def predict(self, session_key, packet_total):
+    def predict(self, packet_total):
         """
         패킷 데이터를 분류하는 함수
         Args:

@@ -123,7 +123,7 @@ class to_df:
                 
                 if sni is None:
                     sni = "No SNI"     
-                self.sessions[session_key] = {'sni': sni, 'data': []}
+                self.sessions[session_key] = {'sni': sni, 'data': [], 'timestamps': [0], 'directions': []}
 
             
             current_session = self.sessions[session_key]['data']
@@ -139,6 +139,14 @@ class to_df:
                 continue
             
             current_session += [f'{direction}{packet_size}'] if 0 <= packet_size <= 1600 else []
+            
+            current_timestamps = self.sessions[session_key]['timestamps']
+            current_time = max(current_timestamps[-1], float(pkt.time))
+            current_timestamps += [current_time]
+
+            current_directions = self.sessions[session_key]['directions']
+            current_direction = -1 if direction == "-" else +1
+            current_directions += [current_direction]
 
         df_data = []
         
@@ -147,6 +155,8 @@ class to_df:
             splt = data['data']
             key = key.split("_")
             sni = data['sni']
+            iat = data['timestamps']
+            d = data['directions']
             splt_arr = np.array([int(x) for x in splt])
 
             df_data.append([
@@ -157,11 +167,13 @@ class to_df:
                 int(sum(splt_arr[splt_arr<0])), 
                 len(splt), 
                 splt,
-                sni
+                sni,
+                [x - iat[1] for x in iat[1:]],
+                d
             ])
 
         df = pd.DataFrame(
-            df_data, columns=['Source IP', 'Source Port', 'Destination IP', 'Destination Port', 'Protocol', 'Rx-Pkts','Tx-Pkts', 'Rx-Bytes', 'Tx-Bytes', "SPLT-Len", "SPLT-Data", "SNI"]
+            df_data, columns=['Source IP', 'Source Port', 'Destination IP', 'Destination Port', 'Protocol', 'Rx-Pkts','Tx-Pkts', 'Rx-Bytes', 'Tx-Bytes', "SPLT-Len", "SPLT-Data", "SNI", "IAT-Data", "Direction-Data"]
         ).sort_values(by=['Rx-Bytes'], axis=0, ascending=False)
 
         name = os.path.split(self.data_path)[1]
