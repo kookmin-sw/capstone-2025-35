@@ -9,7 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # 웹드라이버 경로 설정
-service = Service('/usr/local/bin/chromedriver')  # 경로 확인
+service = Service('/usr/local/bin/chromedriver')  # 개인 크롬 드라이버 경로 확인
 
 # TShark 실행
 timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -17,8 +17,6 @@ tshark_process = subprocess.Popen(['tshark', '-i', 'wlp61s0', '-w', f'{timestamp
 
 options = Options()  # ChromeOptions 인스턴스 생성
 options.add_argument("--incognito")  # 시크릿 모드 활성화
-options.add_argument("--disable-extensions")  # 확장 프로그램 비활성화
-options.add_argument("--disable-gpu")  # GPU 비활성화
 options.add_argument("--headless") #백그라운드 모드로 실행 만약 어떻게 진행되는지 보고싶으면 이 줄 주석화
 
 try:

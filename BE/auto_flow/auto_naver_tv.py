@@ -17,7 +17,7 @@ options.add_argument("--headless") #백그라운드 모드로 실행 만약 어�
 
 # TShark 실행
 timestamp = time.strftime("%Y%m%d_%H%M%S")
-tshark_process = subprocess.Popen(['tshark', '-i', 'wlp61s0', '-w', f'{timestamp}_Linux_Jang_naver.pcap'])
+tshark_process = subprocess.Popen(['tshark', '-i', '개인 네트워크 인터페이스', '-w', f'{timestamp}_Linux_Jang_naver.pcap'])
 
 for _ in range(5):
 

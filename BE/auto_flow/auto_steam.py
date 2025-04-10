@@ -7,14 +7,14 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
 # 웹드라이버 경로 설정
-service = Service('/usr/local/bin/chromedriver')  # 경로 확인
+service = Service('/usr/local/bin/chromedriver')  # 개인 크롬 드라이버 지정
 options = Options()  # ChromeOptions 인스턴스 생성
 options.add_argument("--incognito")  # 시크릿 모드 활성화
 options.add_argument("--headless") #백그라운드 모드로 실행 만약 어떻게 진행되는지 보고싶으면 이 줄 주석화
 
 # TShark 실행
 timestamp = time.strftime("%Y%m%d_%H%M%S")
-tshark_process = subprocess.Popen(['tshark', '-i', 'wlp61s0', '-w', f'{timestamp}_Linux_Jang_steam.pcap'])
+tshark_process = subprocess.Popen(['tshark', '-i', '개인 네트워크 인터페이스', '-w', f'{timestamp}_steam.pcap'])
 
 try:
     for _ in range(5):  # 총 5번 반복
@@ -49,13 +49,13 @@ try:
             random_stream = random.choice(streams)
 
             # 선택한 방송의 인덱스 출력
-            num = streams.index(random_stream)
-            print(f"선택한 방송의 인덱스: {num}")
+            #num = streams.index(random_stream)
+            #print(f"선택한 방송의 인덱스: {num}")
 
             # 선택한 방송 클릭
             random_stream.click()
 
-            time.sleep(20)  # 방송 30초 동안 시청
+            time.sleep(20)  # 방송 15초 이상 시청 컴마다 로딩 되는 시간이 다를 수 있기 때문에 알아서 지정
 
         driver.quit()  # 드라이버 종료
 
