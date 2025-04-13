@@ -22,6 +22,7 @@ class Classification:
         self.N_GRAM = self.bitmapPKL['N_GRAM']
         self.VEC_LEN = self.bitmapPKL['VEC_LEN']
         self.disc = self.bitmapPKL['disc']
+        self.FIRST_PKT_N = 100
     
     def discretize_values(self, value, disc_range):
         """

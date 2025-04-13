@@ -99,7 +99,7 @@ class BaseSniffer:
                 return
             session['data'].append(packet_size)
 
-            if len(session['data']) == self.classification.VEC_LEN:
+            if len(session['data']) == 100:
                 prediction_thread = threading.Thread(target=self.prediction, args=(session_key, session['data']))
                 prediction_thread.start()
     
