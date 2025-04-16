@@ -30,7 +30,7 @@ class BaseSniffer:
 
         self.TP = defaultdict(list)
         self.FP = defaultdict(list)
-        self.FN = []
+        self.TN = []
 
     def get_packet_direction(self, src_ip, dst_ip):
         """
@@ -49,6 +49,18 @@ class BaseSniffer:
         TLS 핸드셰이크 정보를 감지하여 세션에 저장 (Pyshark만 적용 가능)
         """
         pass  # PysharkSniffer에서만 구현
+
+    def get_tcp_info(self, packet):
+        """
+        TCP 패킷 정보 반환 (자식 클래스에서 구현 필요)
+        """
+        raise NotImplementedError("get_tcp_info()은 자식 클래스에서 구현해야 합니다.")
+    
+    def get_udp_info(self, packet):
+        """
+        UDP 패킷 정보 반환 (자식 클래스에서 구현 필요)
+        """
+        raise NotImplementedError("get_udp_info()은 자식 클래스에서 구현해야 합니다.")
 
     def process_packet(self, packet):
         """
@@ -74,6 +86,22 @@ class BaseSniffer:
         """
         packet_size = abs(packet_size)
         self.traffic_tmp[src_ip][dst_ip].append(packet_size)
+    
+    def handle_packet(self, session_key, packet_size):
+        """
+        패킷 처리
+        """
+        with self.lock:
+            session = self.sessions.setdefault(session_key, {'sni': None, 'data': deque(maxlen=self.classification.VEC_LEN)})
+            
+            self.add_traffic(session_key[0], session_key[2], packet_size)
+            if session_key in self.predicted:
+                return
+            session['data'].append(packet_size)
+
+            if len(session['data']) == self.classification.VEC_LEN:
+                prediction_thread = threading.Thread(target=self.prediction, args=(session_key, session['data']))
+                prediction_thread.start()
     
     def monitor_traffic(self):
         """
@@ -131,6 +159,11 @@ class BaseSniffer:
         logging.info(f"세션: {session_key} SNI: {sni} 예측: {predict} 점수: {score}\n상세점수: {score_dict}")
         self.predicted.append(session_key)
 
+        self.socketio.emit("streaming_detection", {
+            'ip': session_key[0],
+            'services': [predict],
+        })
+
         if sni is not None:
             matched = False
 
@@ -147,7 +180,7 @@ class BaseSniffer:
                     break
             
             if not matched:
-                self.FN.append(score)
+                self.TN.append(score)
                 #logging.info(f"실제 앱 미정: {sni} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
         
     def visualization(self, log_path):
@@ -155,18 +188,17 @@ class BaseSniffer:
         시각화 함수
         """
         with self.lock:
-            print(self.FN)
             plt.figure(figsize=(12, 6))
             for app_name in self.TP.keys():
                 tp_scores = self.TP[app_name]
-                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP', cumulative=True)
+                plt.hist(tp_scores, bins=20, alpha=0.5, label=f'{app_name} TP')
             for app_name in self.FP.keys():
                 fp_scores = self.FP[app_name]
-                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP', cumulative=True)
-            plt.hist(self.FN, bins=20, alpha=0.5, color='g', label='FN', cumulative=True)
+                plt.hist(fp_scores, bins=20, alpha=0.5, label=f'{app_name} FP')
+            plt.hist(self.TN, bins=20, alpha=0.5, color='g', label='TN')
             plt.legend(loc='upper right')
             plt.title('Prediction Result')
-            plt.xlabel('Score')
+            plt.xlabel('Collision')
             plt.ylabel('Count')
             
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -174,7 +206,7 @@ class BaseSniffer:
             log_path = Path(log_path)
             log_path.mkdir(parents=True, exist_ok=True)
 
-            # 📌 중복 방지를 위해 result_숫자.png 추가
+            # 중복 방지를 위해 result_숫자.png 추가
             i = 1
             if (log_path / f"result_{timestamp}.png").exists():
                 while (log_path / f"result_{timestamp}_{i}.png").exists():
@@ -192,4 +224,4 @@ class BaseSniffer:
             # 데이터 초기화
             self.TP.clear()
             self.FP.clear()
-            self.FN.clear()
+            self.TN.clear()
