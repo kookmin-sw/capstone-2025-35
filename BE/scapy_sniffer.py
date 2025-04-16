@@ -7,6 +7,24 @@ class ScapySniffer(BaseSniffer):
     def __init__(self, socketio, interface="en0", bitmap_path="bitmap_record.pkl"):
         super().__init__(socketio, interface, bitmap_path)
 
+    def get_tcp_info(self, packet):
+        """
+        TCP 패킷 정보 반환
+        """
+        src_port = packet[TCP].sport
+        dst_port = packet[TCP].dport
+        packet_size = len(bytes(packet["TCP"].payload))
+        return src_port, dst_port, packet_size, 6
+    
+    def get_udp_info(self, packet):
+        """
+        UDP 패킷 정보 반환
+        """
+        src_port = packet[UDP].sport
+        dst_port = packet[UDP].dport
+        packet_size = len(bytes(packet["UDP"].payload))
+        return src_port, dst_port, packet_size, 17
+
     def process_packet(self, packet):
         """
         Scapy에서 캡처한 패킷을 처리
@@ -18,21 +36,15 @@ class ScapySniffer(BaseSniffer):
             src_ip = packet[IP].src
             dst_ip = packet[IP].dst
 
-            if packet.haslayer(TCP):
-                protocol = 6
-                src_port = packet[TCP].sport
-                dst_port = packet[TCP].dport
-                packet_size = len(bytes(packet["TCP"].payload))
-            elif packet.haslayer(UDP):
-                protocol = 17
-                src_port = packet[UDP].sport
-                dst_port = packet[UDP].dport
-                packet_size = len(bytes(packet["UDP"].payload))
-            else:
-                return
-            
             direction = self.get_packet_direction(src_ip, dst_ip)
             if direction is None:
+                return
+
+            if packet.haslayer(TCP):
+                src_port, dst_port, packet_size, protocol = self.get_tcp_info(packet)
+            elif packet.haslayer(UDP):
+                src_port, dst_port, packet_size, protocol = self.get_udp_info(packet)
+            else:
                 return
             
             if direction == 'inbound':
@@ -43,17 +55,7 @@ class ScapySniffer(BaseSniffer):
 
             session_key = (src_ip, src_port, dst_ip, dst_port, protocol)
 
-            with self.lock:
-                if session_key not in self.sessions:
-                    self.sessions[session_key] = {'sni': None, 'data': []}
-                
-                self.add_traffic(src_ip, dst_ip, packet_size)
-                self.sessions[session_key]['data'].append(packet_size)
-
-                if len(self.sessions[session_key]['data']) == 20:
-                    score, predict = self.classification.predict(session_key, np.array(self.sessions[session_key]['data'], dtype=np.int16))
-                    self.log_session_info(session_key, score, predict)
-                    self.predicted.append(session_key)
+            self.handle_packet(session_key, packet_size)
 
         except Exception as e:
             logging.error(f"[ERROR] {e}")

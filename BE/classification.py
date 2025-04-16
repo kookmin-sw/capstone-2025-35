@@ -22,6 +22,7 @@ class Classification:
         self.N_GRAM = self.bitmapPKL['N_GRAM']
         self.VEC_LEN = self.bitmapPKL['VEC_LEN']
         self.disc = self.bitmapPKL['disc']
+        self.FIRST_PKT_N = 100
     
     def discretize_values(self, value, disc_range):
         """
@@ -58,7 +59,7 @@ class Classification:
 
         return res
     
-    def predict(self, session_key, packet_total):
+    def predict(self, packet_total):
         """
         패킷 데이터를 분류하는 함수
         Args:

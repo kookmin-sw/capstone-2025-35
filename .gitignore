@@ -1,10 +1,10 @@
-BE/config.py
 __pycache__/
 *.pyc
 .DS_Store
 .env
 pcap/
 logs/
-*.pkl
+csv/
+plot/
 
 *.ipynb
