@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import random
@@ -11,13 +12,19 @@ from selenium.webdriver.support import expected_conditions as EC
 # 웹드라이버 경로 설정
 service = Service('/usr/local/bin/chromedriver')  # Chrome 드라이버 설치 경로 (이건 개인마다 알아서 지정)
 options = Options()  # ChromeOptions 인스턴스 생성
-
 options.add_argument("--headless") #백그라운드 모드로 실행 만약 어떻게 진행되는지 보고싶으면 이 줄 주석화
+
+save_dir = '/home/jang/Documents/new_pcap/capstone-2025-35/pcap/NaverTV/PC/WiFi'  # 원하는 pcap 경로로 수정
 
 
 # TShark 실행
 timestamp = time.strftime("%Y%m%d_%H%M%S")
-tshark_process = subprocess.Popen(['tshark', '-i', '개인 네트워크 인터페이스', '-w', f'{timestamp}_Linux_Jang_naver.pcap'])
+# 전체 파일 경로 생성 이름
+pcap_path = os.path.join(save_dir, f'{timestamp}_Jang_naver_tv.pcap')
+
+# tshark 실행
+tshark_process = subprocess.Popen(['tshark', '-i', 'wlp61s0', '-w', pcap_path])
+print(f"PCAP 파일 저장 위치: {pcap_path}")
 
 for _ in range(5):
 
@@ -63,7 +70,7 @@ for _ in range(5):
                 time.sleep(2)
                 break
             
-            time.sleep(1)  # 1초 대기 후 다시 시도
+            time.sleep(1)  # 1초 대기 후 다시 시도 
 
         if(skip == True):
             time.sleep(16)  # 광고 skip 완료 후 15초 정도 시청하기 위한 용도 아니면 광고가 없었단 뜻이므로 이미 영상 시청 완료
@@ -71,8 +78,10 @@ for _ in range(5):
         driver.quit()  # Chrome 브라우저 종료
 
 time.sleep(2)
-tshark_process.terminate()
-
+tshark_process.terminate()  # 정상 종료 요청
+# tshark_process.kill()     # 강제 종료 (terminate가 안 통할 경우)
+tshark_process.wait()       # 종료될 때까지 대기
+print("프로그램 종료")
 
 
 
