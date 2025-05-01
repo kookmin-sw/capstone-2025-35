@@ -71,7 +71,7 @@ try:
                     skip_ad_button = driver.find_element(By.CLASS_NAME, 'ytp-skip-ad-button')
                     skip_ad_button.click()  # 광고 건너뛰기 버튼 클릭
                     print("광고를 건너뛰었습니다.")
-                    skip = True
+                    ad_skipped = True
                     break  # 클릭 후 while 문 종료
                 except Exception as e:
                     # 광고 건너뛰기 버튼을 찾지 못한 경우
@@ -84,7 +84,7 @@ try:
                 
                 time.sleep(1)  # 1초 대기 후 다시 시도
 
-            if(skip == True):
+            if(ad_skipped == True):
                 time.sleep(17)  #광고를 건너뛴 이후부터 
 
         except WebDriverException as e:
