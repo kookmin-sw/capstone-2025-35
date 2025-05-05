@@ -41,7 +41,7 @@ def monitor_suricata_logs():
 def start_suricata():
     try:
         subprocess.Popen([
-            "suricata", "-c", "/etc/suricata/suricata.yaml", "-i", "wlp61s0"
+            "suricata", "-c", "/etc/suricata/suricata.yaml", "-i", "자기 네트워크 인터페이스"
         ])
         print("[INFO] Suricata 실행됨")
 
