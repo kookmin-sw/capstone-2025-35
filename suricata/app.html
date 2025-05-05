@@ -1,0 +1,21 @@
+<!-- 차단 버튼 -->
+<button onclick="startSuricata()">차단</button>
+
+<!-- 정지 버튼 -->
+<button onclick="stopSuricata()">정지</button>
+
+<script>
+function startSuricata() {
+    fetch('/start-suricata', { method: 'POST' })
+        .then(res => res.text())
+        .then(msg => alert(msg))
+        .catch(err => alert('오류: ' + err));
+}
+
+function stopSuricata() {
+    fetch('/stop-suricata', { method: 'POST' })
+        .then(res => res.text())
+        .then(msg => alert(msg))
+        .catch(err => alert('오류: ' + err));
+}
+</script>
