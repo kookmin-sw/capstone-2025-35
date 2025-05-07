@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>IP 차단 및 해제 대시보드</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; margin: 40px; }
+    table { border-collapse: collapse; width: 60%; }
+    th, td { border: 1px solid #bbb; padding: 10px; text-align: center; }
+    th { background: #f0f0f0; }
+    #result { margin-top: 20px; color: #2c3e50; }
+  </style>
+</head>
+<body>
+  <form onsubmit="blockIP(); return false;">
+    <table>
+      <tr>
+        <th>IP 주소 및 CIDR 표기(192.168.10.70/26)</th>
+        <th>차단</th>
+        <th>해제</th>
+      </tr>
+      <tr>
+        <td><input type="text" id="ip-input" placeholder="예: 192.168.1.100"></td>
+        <td><button type="button" onclick="blockIP()">차단</button></td>
+        <td><button type="button" onclick="unblockIP()">해제</button></td>
+      </tr>
+    </table>
+
+    <button type="button" onclick="startSuricata()">suricata 시작</button>
+    <button type="button" onclick="stopSuricata()">suricata 정지</button>
+  </form>
+  <div id="result"></div>
+  <div id="blocked-list-container">
+    <h3>현재 차단된 IP 목록</h3>
+    <ul id="blocked-list"></ul>
+  </div>
+  <script>
+    function fetchBlockedIPs() {
+        fetch('/blocked-ips')
+            .then(res => res.json())
+            .then(ips => {
+            const list = document.getElementById('blocked-list');
+            list.innerHTML = '';
+            if (ips.length === 0) {
+                list.innerHTML = '<li>없음</li>';
+            } else {
+                ips.forEach(ip => {
+                const li = document.createElement('li');
+                li.textContent = ip;
+                list.appendChild(li);
+                });
+            }
+        });
+    }
+    function blockIP() {
+        const ip = document.getElementById('ip-input').value.trim();
+        if (!ip) {
+            document.getElementById('result').textContent = "IP 주소를 입력하세요.";
+            return;
+        }
+        fetch('/block', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('result').textContent = data.message;
+            fetchBlockedIPs();
+        })
+        .catch(() => {
+            document.getElementById('result').textContent = "서버 오류가 발생했습니다.";
+        });
+    }
+    function unblockIP() {
+        const ip = document.getElementById('ip-input').value.trim();
+        if (!ip) {
+            document.getElementById('result').textContent = "IP 주소를 입력하세요.";
+            return;
+        }
+        fetch('/unblock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip: ip })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('result').textContent = data.message;
+            fetchBlockedIPs();
+        })
+        .catch(() => {
+            document.getElementById('result').textContent = "서버 오류가 발생했습니다.";
+        });
+    }
+    function startSuricata() {
+    fetch('/start-suricata', { method: 'POST' })
+        .then(res => res.text())
+        .then(msg => alert(msg))
+        .catch(err => alert('오류: ' + err));
+    }
+
+    function stopSuricata() {
+        fetch('/stop-suricata', { method: 'POST' })
+            .then(res => res.text())
+            .then(msg => alert(msg))
+            .catch(err => alert('오류: ' + err));
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchBlockedIPs();
+      setInterval(fetchBlockedIPs, 2000);
+    });
+  </script>
+</body>
+</html>
