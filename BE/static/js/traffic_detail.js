@@ -62,10 +62,9 @@
  *      services: ["youtube", "netflix", ...]  // 감지된 스트리밍 서비스 목록
  *    }
  */
-
 // 소켓 연결
 const socket = io.connect("http://localhost:5002");
-const ip = document.getElementById('ip-address').textContent;
+// IP 주소는 HTML 템플릿에서 전달받음 (161번 줄 참조)
 let trafficChart, protocolChart, portChart, patternChart;
 let packetLog = [];
 let currentPage = 1;
@@ -78,6 +77,8 @@ let monitoringStartTime = new Date();
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
+    // 트래픽 상세 페이지 접속 이벤트 발생
+    socket.emit('join_traffic_detail', { ip: ip });
     // 차트 초기화
     initTrafficChart();
     initProtocolChart();

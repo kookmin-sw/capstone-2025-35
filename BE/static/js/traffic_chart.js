@@ -101,9 +101,7 @@ function addRow(ip) {
     
     // 미니 차트 생성
     createMiniChart(ip);
-    
-    // 모니터링 중인 IP 카운트 업데이트
-    updateMonitoredIpCount();
+
 }
 
 // 미니 차트 생성
@@ -166,6 +164,7 @@ function goToDetail(ip) {
 function updateMonitoredIpCount() {
     const count = Object.keys(charts).length;
     document.getElementById('monitored-ip-count').textContent = count;
+    console.log(charts)
 }
 
 // 총 트래픽량 업데이트
@@ -437,6 +436,9 @@ function createChart(ip) {
             }
         }
     });
+    // 모니터링 중인 IP 카운트 업데이트
+    updateMonitoredIpCount();
+    console.log("update IP")
 }
 
 // 어바웃 링크 클릭 이벤트
