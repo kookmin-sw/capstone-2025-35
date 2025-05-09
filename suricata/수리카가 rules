@@ -1,0 +1,116 @@
+
+쿠팡 스트리밍 
+alert tls any any -> any any (
+    msg:"[ALERT] Coupang Streaming SNI match";
+    tls.sni; content:".coupangstreaming.com"; nocase;
+    sid:100002;
+    rev:1;
+)
+
+
+스팀
+steambroadcast.akamaized.net
+video-manager.steamstatic.com
+alert tls any any -> any any (
+    msg:"[ALERT] Steam Broadcasting detected (steambroadcast)";
+    tls.sni; content:"steambroadcast.akamaized.net"; nocase;
+    sid:3001001;
+    rev:1;
+)
+
+soop
+live.sooplive.co.kr	
+alert tls any any -> any any (
+    msg:"[ALERT] SoopLive streaming detected via SNI";
+    tls.sni; content:"sooplive.co.kr"; nocase;
+    tls.sni; content:"live"; nocase;
+    sid:2001001;
+    rev:1;
+)
+
+youtube
+*.googlevideo.com
+
+alert tls any any -> any any (
+    msg:"[ALERT] YouTube streaming detected via SNI";
+    tls.sni; content:"googlevideo.com"; nocase;
+    sid:1001001;
+    rev:1;
+)
+
+
+wavve
+alert tls any any -> any any (
+    msg:"[ALERT] Wavve VOD streaming detected";
+    tls.sni; content:"-vod.cdn.wavve.com"; nocase;
+    sid:4001001;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] Wavve LIVE streaming detected";
+    tls.sni; content:"-live.cdn.wavve.com"; nocase;
+    sid:4001002;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] Wavve FLIVE streaming detected";
+    tls.sni; content:"-flive.cdn.wavve.com"; nocase;
+    sid:4001003;
+    rev:1;
+)
+
+
+NaverTV
+alert tls any any -> any any (
+    msg:"[ALERT] NAVER VOD streaming detected";
+    tls.sni; content:"-vod."; nocase;
+    tls.sni; content:".pstatic.net"; nocase;
+    sid:5001001;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] NAVER VOD via Akamai CDN";
+    tls.sni; content:"-vod.akamaized.net"; nocase;
+    sid:5001002;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] NAVER LIVE stream (slit/thumb)";
+    tls.sni; content:"livecloud"; nocase;
+    tls.sni; content:".pstatic.net"; nocase;
+    sid:5001003;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] NAVER LIVE thumbnail stream";
+    tls.sni; content:"livecloud-thumb.akamaized.net"; nocase;
+    sid:5001004;
+    rev:1;
+)
+
+NetFlix
+alert tls any any -> any any (
+    msg:"[ALERT] Netflix OCA video streaming detected";
+    tls.sni; content:".nflxvideo.net"; nocase;
+    sid:5001101;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] Netflix streaming session (nflxso.net)";
+    tls.sni; content:".nflxso.net"; nocase;
+    sid:5001102;
+    rev:1;
+)
+
+alert tls any any -> any any (
+    msg:"[ALERT] Netflix low-latency FTL streaming";
+    tls.sni; content:"ftl.netflix.com"; nocase;
+    sid:5001103;
+    rev:1;
+)
