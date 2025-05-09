@@ -30,7 +30,8 @@ HOSTNAMES = {
 
 # 전역 변수
 start_time = datetime.now()
-traffic_data = {ip: [] for ip in MONITORING_IP_LIST}
+traffic_data = {ip: 0 for ip in MONITORING_IP_LIST}  # 각 IP별 최신 트래픽 값만 저장
+traffic_history = {ip: [] for ip in MONITORING_IP_LIST}  # 히스토리 저장용 (내부 사용)
 seconds_passed = 0
 
 # ======================== #
@@ -200,10 +201,14 @@ def generate_traffic_data():
                 
             traffic_value = generate_traffic_pattern(seconds_passed, base_traffic, noise_level)
             
-            if len(traffic_data[ip]) > 100:
-                traffic_data[ip] = traffic_data[ip][-100:]
+            # 히스토리 저장 (내부 사용)
+            if len(traffic_history[ip]) > 100:
+                traffic_history[ip] = traffic_history[ip][-100:]
             
-            traffic_data[ip].append(traffic_value)
+            traffic_history[ip].append(traffic_value)
+            
+            # 최신 값만 저장 (클라이언트로 전송)
+            traffic_data[ip] = traffic_value
         
         # 트래픽 데이터 전송
         socketio.emit('traffic_total', {

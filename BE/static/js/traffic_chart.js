@@ -190,24 +190,41 @@ function getTrafficStatusColor(bytesPerSecond) {
 
 /**
  * 소켓 이벤트 처리: 트래픽 데이터 수신
- * 
+ *
  * 백엔드에서 전송해야 하는 데이터 형식:
  * {
  *   seconds_passed: Number,  // 모니터링 시작 이후 경과 시간(초)
  *   traffic_total: {         // IP별 트래픽 데이터
- *     "192.168.1.1": [123, 456, 789, ...],  // 각 초마다의 트래픽 바이트 수
- *     "192.168.1.2": [234, 567, 890, ...],
+ *     "192.168.1.1": 456,    // 현재 초의 트래픽 바이트 수
+ *     "192.168.1.2": 567,
  *     ...
  *   },
  *   detected_services: ["youtube", "netflix", ...]  // 감지된 스트리밍 서비스 목록 (선택적)
  * }
  */
+
+// IP별 트래픽 히스토리 저장
+const trafficHistory = {};
 socket.on("traffic_total", function (data) {
     let secondsPassed = data.seconds_passed;
     let trafficData = data.traffic_total;
     let newTrafficBytes = 0;
 
     Object.keys(trafficData).forEach((ip) => {
+        // IP별 트래픽 히스토리가 없으면 초기화
+        if (!trafficHistory[ip]) {
+            trafficHistory[ip] = [];
+        }
+        
+        // 현재 트래픽 값 저장
+        const trafficValue = trafficData[ip] || 0;
+        trafficHistory[ip].push(trafficValue);
+        
+        // 히스토리 크기 제한
+        if (trafficHistory[ip].length > maxSize) {
+            trafficHistory[ip] = trafficHistory[ip].slice(-maxSize);
+        }
+        
         // 차트가 없으면 생성
         if (!charts[ip]) {
             createChart(ip);
@@ -216,16 +233,10 @@ socket.on("traffic_total", function (data) {
         // 미니 차트 업데이트
         let miniChart = Chart.getChart(`mini-chart-${ip}`);
         if (miniChart) {
-            let val = Math.min(Math.max(0, trafficData[ip].length - period - 1) + miniChart.data.labels.length, period - 1);
-            let label = Math.max(0, secondsPassed - period - 1) + miniChart.data.labels.length;
-            
             // 새 데이터 추가
-            while (label < secondsPassed) {
-                const trafficValue = trafficData[ip][val++] || 0;
-                miniChart.data.labels.push(label++);
-                miniChart.data.datasets[0].data.push(trafficValue);
-                newTrafficBytes += trafficValue;
-            }
+            miniChart.data.labels.push(secondsPassed);
+            miniChart.data.datasets[0].data.push(trafficValue);
+            newTrafficBytes += trafficValue;
             
             // 오래된 데이터 제거
             while (miniChart.data.labels.length > period) {
@@ -234,7 +245,7 @@ socket.on("traffic_total", function (data) {
             }
             
             // 트래픽 상태에 따른 색상 변경
-            const latestTraffic = miniChart.data.datasets[0].data[miniChart.data.datasets[0].data.length - 1] || 0;
+            const latestTraffic = trafficValue;
             miniChart.data.datasets[0].borderColor = getTrafficStatusColor(latestTraffic);
             miniChart.data.datasets[0].backgroundColor = `${getTrafficStatusColor(latestTraffic)}20`; // 20% 투명도
             
@@ -244,14 +255,11 @@ socket.on("traffic_total", function (data) {
         // 메인 차트 업데이트
         let chart = charts[ip];
         if (chart) {
-            let val = Math.min(Math.max(0, trafficData[ip].length - period - 1) + chart.data.labels.length, period - 1);
-            let label = Math.max(0, secondsPassed - period - 1) + chart.data.labels.length;
+            // 새 데이터 추가
+            chart.data.labels.push(secondsPassed);
+            chart.data.datasets[0].data.push(trafficValue);
             
-            while (label < secondsPassed) {
-                chart.data.labels.push(label++);
-                chart.data.datasets[0].data.push(trafficData[ip][val++] || 0);
-            }
-            
+            // 오래된 데이터 제거
             while (chart.data.labels.length > period) {
                 chart.data.labels.shift();
                 chart.data.datasets[0].data.shift();
