@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 트래픽 모니터링 - 데모</title>
+    <link href="css/styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 데모 페이지 추가 스타일 */
+        .demo-note {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        
+        .demo-note h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .demo-note p {
+            margin-bottom: 0;
+            color: #7f8c8d;
+        }
+        
+        .demo-tabs {
+            display: flex;
+            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-tab.active {
+            border-bottom-color: #3498db;
+            color: #3498db;
+        }
+        
+        .demo-tab:hover:not(.active) {
+            border-bottom-color: #e0e0e0;
+            background-color: #f5f7fa;
+        }
+        
+        .demo-content {
+            display: none;
+        }
+        
+        .demo-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1><i class="fas fa-network-wired"></i> 실시간 트래픽 모니터링 - 정적 데모</h1>
+    </header>
+
+    <div class="container">
+        <div class="demo-note">
+            <h3><i class="fas fa-info-circle"></i> 데모 페이지 안내</h3>
+            <p>이 페이지는 실시간 트래픽 모니터링 시스템의 UI 디자인을 보여주는 정적 데모입니다. 실제 데이터는 포함되어 있지 않으며, 백엔드 연동 없이 UI만 확인할 수 있습니다.</p>
+            <p>실제 데이터가 포함된 동적 데모를 보려면 <code>python BE/demo.py</code> 명령어를 실행한 후 <a href="http://localhost:5002" target="_blank">http://localhost:5002</a>에 접속하세요.</p>
+        </div>
+        
+        <div class="demo-tabs">
+            <div class="demo-tab active" onclick="showTab('main')">메인 페이지</div>
+            <div class="demo-tab" onclick="showTab('detail')">상세 페이지</div>
+        </div>
+        
+        <!-- 메인 페이지 데모 -->
+        <div id="main-demo" class="demo-content active">
+            <!-- Dashboard Summary -->
+            <div class="dashboard-summary">
+                <div class="summary-card">
+                    <h3><i class="fas fa-wifi"></i> 모니터링 중인 IP</h3>
+                    <div class="value">3</div>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-chart-line"></i> 총 트래픽량</h3>
+                    <div class="value">1.25 GB</div>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-clock"></i> 모니터링 시간</h3>
+                    <div class="value">1시간 23분</div>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-video"></i> 감지된 스트리밍</h3>
+                    <div class="value">3</div>
+                </div>
+            </div>
+
+            <!-- Traffic Table -->
+            <div class="table-container">
+                <table class="traffic-info-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-network-wired"></i> IP 주소</th>
+                            <th><i class="fas fa-ethernet"></i> MAC 주소</th>
+                            <th><i class="fas fa-chart-line"></i> 트래픽 그래프</th>
+                            <th><i class="fas fa-stream"></i> 스트리밍 서비스</th>
+                            <th><i class="fas fa-search-plus"></i> 상세보기</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="#" class="ip-link">192.168.1.100</a>
+                            </td>
+                            <td>00:1A:2B:3C:4D:5E</td>
+                            <td>
+                                <div style="width: 200px; height: 60px; background: linear-gradient(90deg, rgba(52,152,219,0.2) 0%, rgba(52,152,219,0.5) 100%); border-radius: 4px;"></div>
+                            </td>
+                            <td>
+                                <span class="app-badge app-youtube">youtube</span>
+                                <span class="app-badge app-netflix">netflix</span>
+                            </td>
+                            <td>
+                                <button onclick="showTab('detail')" class="detail-btn">
+                                    <i class="fas fa-chart-bar"></i> 상세 보기
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="#" class="ip-link">192.168.1.101</a>
+                            </td>
+                            <td>AA:BB:CC:DD:EE:FF</td>
+                            <td>
+                                <div style="width: 200px; height: 60px; background: linear-gradient(90deg, rgba(231,76,60,0.2) 0%, rgba(231,76,60,0.5) 100%); border-radius: 4px;"></div>
+                            </td>
+                            <td>
+                                <span class="app-badge app-wavve">wavve</span>
+                                <span class="app-badge app-coupangplay">coupangplay</span>
+                            </td>
+                            <td>
+                                <button onclick="showTab('detail')" class="detail-btn">
+                                    <i class="fas fa-chart-bar"></i> 상세 보기
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <a href="#" class="ip-link">192.168.1.102</a>
+                            </td>
+                            <td>11:22:33:44:55:66</td>
+                            <td>
+                                <div style="width: 200px; height: 60px; background: linear-gradient(90deg, rgba(46,204,113,0.2) 0%, rgba(46,204,113,0.5) 100%); border-radius: 4px;"></div>
+                            </td>
+                            <td>
+                                <span class="app-badge app-navertv">navertv</span>
+                            </td>
+                            <td>
+                                <button onclick="showTab('detail')" class="detail-btn">
+                                    <i class="fas fa-chart-bar"></i> 상세 보기
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Charts Container -->
+            <div id="charts">
+                <div class="chart-wrapper">
+                    <div class="ip-label"><i class="fas fa-network-wired"></i> 192.168.1.100</div>
+                    <div class="chart-container">
+                        <img src="https://via.placeholder.com/800x300/f5f7fa/3498db?text=트래픽+차트+데모" alt="트래픽 차트 데모" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div class="chart-wrapper">
+                    <div class="ip-label"><i class="fas fa-network-wired"></i> 192.168.1.101</div>
+                    <div class="chart-container">
+                        <img src="https://via.placeholder.com/800x300/f5f7fa/e74c3c?text=트래픽+차트+데모" alt="트래픽 차트 데모" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                </div>
+                
+                <div class="chart-wrapper">
+                    <div class="ip-label"><i class="fas fa-network-wired"></i> 192.168.1.102</div>
+                    <div class="chart-container">
+                        <img src="https://via.placeholder.com/800x300/f5f7fa/2ecc71?text=트래픽+차트+데모" alt="트래픽 차트 데모" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 상세 페이지 데모 -->
+        <div id="detail-demo" class="demo-content">
+            <!-- IP 정보 카드 -->
+            <div class="ip-info-card">
+                <div class="ip-header">
+                    <h2><i class="fas fa-info-circle"></i> IP 정보</h2>
+                    <span class="ip-address">192.168.1.100</span>
+                </div>
+                <div class="ip-details">
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-ethernet"></i> MAC 주소:</span>
+                        <span class="detail-value">00:1A:2B:3C:4D:5E</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-globe"></i> 호스트명:</span>
+                        <span class="detail-value">desktop-pc.local</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="fas fa-clock"></i> 모니터링 시작:</span>
+                        <span class="detail-value">2025-03-26 12:00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 트래픽 요약 카드 -->
+            <div class="dashboard-summary">
+                <div class="summary-card">
+                    <h3><i class="fas fa-arrow-down"></i> 다운로드</h3>
+                    <div class="value">850 MB</div>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-arrow-up"></i> 업로드</h3>
+                    <div class="value">120 MB</div>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-tachometer-alt"></i> 평균 속도</h3>
+                    <div class="value">2.5 MB/s</div>
+                </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-chart-line"></i> 최대 속도</h3>
+                    <div class="value">8.7 MB/s</div>
+                </div>
+            </div>
+
+            <!-- 트래픽 차트 -->
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    <i class="fas fa-chart-area"></i> 실시간 트래픽 그래프
+                    <div class="chart-controls">
+                        <button class="chart-btn"><i class="fas fa-search-plus"></i></button>
+                        <button class="chart-btn"><i class="fas fa-search-minus"></i></button>
+                        <button class="chart-btn"><i class="fas fa-undo"></i></button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <img src="https://via.placeholder.com/800x300/f5f7fa/3498db?text=실시간+트래픽+그래프" alt="실시간 트래픽 그래프" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                </div>
+            </div>
+
+            <!-- 패킷 분석 -->
+            <div class="analysis-section">
+                <h2><i class="fas fa-chart-pie"></i> 트래픽 분석</h2>
+                
+                <div class="analysis-grid">
+                    <!-- 프로토콜 분포 -->
+                    <div class="analysis-card">
+                        <h3>프로토콜 분포</h3>
+                        <div class="chart-container" style="height: 250px;">
+                            <img src="https://via.placeholder.com/400x250/f5f7fa/3498db?text=프로토콜+분포" alt="프로토콜 분포" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                        </div>
+                    </div>
+                    
+                    <!-- 포트 사용량 -->
+                    <div class="analysis-card">
+                        <h3>포트 사용량</h3>
+                        <div class="chart-container" style="height: 250px;">
+                            <img src="https://via.placeholder.com/400x250/f5f7fa/e74c3c?text=포트+사용량" alt="포트 사용량" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="analysis-grid">
+                    <!-- 스트리밍 서비스 감지 -->
+                    <div class="analysis-card">
+                        <h3>스트리밍 서비스 감지</h3>
+                        <div class="streaming-services">
+                            <div class="streaming-card app-youtube">
+                                <div class="streaming-icon">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                <div class="streaming-name">youtube</div>
+                            </div>
+                            <div class="streaming-card app-netflix">
+                                <div class="streaming-icon">
+                                    <i class="fas fa-video"></i>
+                                </div>
+                                <div class="streaming-name">netflix</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 트래픽 패턴 -->
+                    <div class="analysis-card">
+                        <h3>트래픽 패턴</h3>
+                        <div class="chart-container" style="height: 250px;">
+                            <img src="https://via.placeholder.com/400x250/f5f7fa/9b59b6?text=트래픽+패턴" alt="트래픽 패턴" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 패킷 로그 테이블 -->
+            <div class="packet-log-section">
+                <h2><i class="fas fa-list"></i> 패킷 로그</h2>
+                <div class="table-container">
+                    <table class="traffic-info-table">
+                        <thead>
+                            <tr>
+                                <th>시간</th>
+                                <th>소스</th>
+                                <th>목적지</th>
+                                <th>프로토콜</th>
+                                <th>크기</th>
+                                <th>정보</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>12:45:32</td>
+                                <td>192.168.1.5</td>
+                                <td>192.168.1.100</td>
+                                <td>TCP</td>
+                                <td>1.2 KB</td>
+                                <td>SYN</td>
+                            </tr>
+                            <tr>
+                                <td>12:45:32</td>
+                                <td>192.168.1.100</td>
+                                <td>192.168.1.5</td>
+                                <td>TCP</td>
+                                <td>1.2 KB</td>
+                                <td>SYN-ACK</td>
+                            </tr>
+                            <tr>
+                                <td>12:45:33</td>
+                                <td>192.168.1.5</td>
+                                <td>192.168.1.100</td>
+                                <td>TCP</td>
+                                <td>1.2 KB</td>
+                                <td>ACK</td>
+                            </tr>
+                            <tr>
+                                <td>12:45:33</td>
+                                <td>192.168.1.5</td>
+                                <td>192.168.1.100</td>
+                                <td>HTTP</td>
+                                <td>2.5 KB</td>
+                                <td>GET /</td>
+                            </tr>
+                            <tr>
+                                <td>12:45:34</td>
+                                <td>192.168.1.100</td>
+                                <td>192.168.1.5</td>
+                                <td>HTTP</td>
+                                <td>15.8 KB</td>
+                                <td>200 OK</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination">
+                    <button class="pagination-btn" disabled><i class="fas fa-chevron-left"></i> 이전</button>
+                    <span>페이지 1 / 1</span>
+                    <button class="pagination-btn" disabled>다음 <i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2025 실시간 트래픽 모니터링 시스템 | <a href="#" id="about-link">About</a></p>
+    </footer>
+
+    <script>
+        function showTab(tabName) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.demo-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 모든 콘텐츠 숨기기
+            document.querySelectorAll('.demo-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 선택한 탭 활성화
+            if (tabName === 'main') {
+                document.querySelector('.demo-tab:nth-child(1)').classList.add('active');
+                document.getElementById('main-demo').classList.add('active');
+            } else {
+                document.querySelector('.demo-tab:nth-child(2)').classList.add('active');
+                document.getElementById('detail-demo').classList.add('active');
+            }
+        }
+        
+        // 어바웃 링크 클릭 이벤트
+        document.getElementById('about-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('실시간 트래픽 모니터링 시스템\n\n네트워크 트래픽을 실시간으로 모니터링하고 분석하는 시스템입니다.\n스트리밍 서비스 감지 및 트래픽 패턴 분석 기능을 제공합니다.');
+        });
+    </script>
+</body>
+</html>
