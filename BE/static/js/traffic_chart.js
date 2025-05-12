@@ -529,7 +529,6 @@ function createChart(ip) {
     });
     // 모니터링 중인 IP 카운트 업데이트
     updateMonitoredIpCount();
-    console.log("update IP")
 }
 
 // 어바웃 링크 클릭 이벤트
