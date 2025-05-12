@@ -375,6 +375,8 @@ function calculateAvgSpeed() {
 // 소켓 이벤트: 상세 트래픽 데이터
 socket.on('traffic_detail', function(data) {
     if (data.ip !== ip) return;
+
+    console.log(data);
     
     const timestamp = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     
