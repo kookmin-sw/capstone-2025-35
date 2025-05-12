@@ -164,7 +164,6 @@ function goToDetail(ip) {
 function updateMonitoredIpCount() {
     const count = Object.keys(charts).length;
     document.getElementById('monitored-ip-count').textContent = count;
-    console.log(charts)
 }
 
 // 총 트래픽량 업데이트
