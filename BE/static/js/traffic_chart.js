@@ -48,6 +48,7 @@ function updateMonitoringTime() {
 
 // 트래픽 크기 포맷팅 (바이트 -> KB, MB, GB)
 function formatTrafficSize(bytes) {
+
     if (bytes < 1024) return bytes + ' B';
     else if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
     else if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MB';
@@ -62,7 +63,6 @@ function createTable() {
             <thead>
                 <tr>
                     <th><i class="fas fa-network-wired"></i> IP 주소</th>
-                    <th><i class="fas fa-ethernet"></i> MAC 주소</th>
                     <th><i class="fas fa-chart-line"></i> 트래픽 그래프</th>
                     <th><i class="fas fa-stream"></i> 스트리밍 서비스</th>
                     <th><i class="fas fa-search-plus"></i> 상세보기</th>
@@ -81,9 +81,6 @@ function addRow(ip) {
     row.innerHTML = `
         <td>
             <a href="/traffic/${ip}" class="ip-link">${ip}</a>
-        </td>
-        <td id="mac-${ip}">
-            <div class="loading"></div> 로딩 중...
         </td>
         <td id="chart-container-${ip}">
             <canvas id="mini-chart-${ip}" width="200" height="60"></canvas>
@@ -107,7 +104,7 @@ function addRow(ip) {
 // 미니 차트 생성
 function createMiniChart(ip) {
     const ctx = document.getElementById(`mini-chart-${ip}`).getContext('2d');
-    
+
     const miniChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -218,8 +215,8 @@ socket.on("traffic_total", function (data) {
         
         // 현재 트래픽 값 저장
         const trafficValue = trafficData[ip] || 0;
+        console.log(trafficValue)
         trafficHistory[ip].push(trafficValue);
-        
         // 히스토리 크기 제한
         if (trafficHistory[ip].length > maxSize) {
             trafficHistory[ip] = trafficHistory[ip].slice(-maxSize);

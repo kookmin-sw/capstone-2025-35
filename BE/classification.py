@@ -63,7 +63,6 @@ class Classification:
         """
         패킷 데이터를 분류하는 함수
         Args:
-            session_key (str): 세션 키
             packet_total (np.array): 패킷 시퀀스
         Returns:
             tuple: 점수 및 예측 결과

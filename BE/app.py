@@ -20,7 +20,7 @@ def signal_handler(sig, frame, sniffer, LOG_PATH):
     exit(0)
 
 # ======================== #
-#          ROUTES         #
+#          ROUTES          #
 # ======================== #
 
 @app.route("/")
@@ -41,6 +41,15 @@ def traffic_detail(ip):
     }
 
     return render_template("traffic_detail.html", data=data)
+
+@socketio.on('join_traffic_detail')
+def handle_join_traffic_detail(data):
+    """
+    클라이언트가 트래픽 상세 페이지에 접속할 때 호출되는 이벤트 핸들러
+    """
+    ip = data['ip']
+    sniffer.hostname(ip)
+    threading.Thread(target=sniffer.run_loop, daemon=True).start()
 
 # ======================== #
 #      APP 실행 코드       #
