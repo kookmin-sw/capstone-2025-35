@@ -23,7 +23,7 @@ FLOWTRACER는 이러한 문제를 해결하기 위해 개발된 패킷 플로우
     
     클라이언트 별 네트워크 리소스 사용량 시각화
     
-2. 어플리케이션 식
+2. 어플리케이션 식별
     
     ![Image](https://github.com/user-attachments/assets/6a3d2708-78a7-40c0-93c9-9634d9ef977f)
     
