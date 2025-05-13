@@ -1,96 +1,65 @@
-# 1. 환경설정
-conda 혹은 pyenv를 활용하여 파이썬 버전을 맞춰주세요
-```bash
-conda create -n appdetect python=3.12
+# FLOWTRACER | 암호화 트래픽 패킷 길이를 이용한 어플리케이션 식별
+---
+2025 국민대학교 소프트웨어학부 캡스톤 디자인 35조 | 국민대학교 정보보호연구실 & (주)시스메이트
 
-conda activate appdetect
-git clone https://github.com/kookmin-sw/capstone-2025-35.git
-cd capstone-2025-35
-pip install -r requirements.txt
-```
-# 2. 감시할 IP 추가
-```bash
-cd BE
-#모니터링할 IP 추가
-python create_ip_json.py -i PUT.YOUR.MONITORING.IP1,PUT.YOUR.MONITORING.IP2
-#python create_ip_json.py -l로 IP 리스트를 확인할 수 있습니다.
-#Linux sniff 때문에 root 권한 필요
-sudo $(which python) app.py
-#macOS
-python app.py
-```
-# 3. 운영체제 별 app.py 실행
-## macOS
-```bash
-sudo python app.py
-```
-## Linux
-```bash
-#Linux의 경우 flask_socketio 실행하기 위하여 root 권한 필요
-sudo $(which python) app.py
-```
+## 1. 프로젝트 소개
 
-# to_df를 사용하기 전 설정
-## pcap 파일 이름 규칙
-pcap 파일 이름을 다음과 같이 해주세요.  
-민수홍: MIN_01.pcap  
-박도현: PARK_01.pcap  
-서동현: SEO_01.pcap  
-장승훈: JANG_01.pcap  
-전홍선: JEON_01.pcap  
-어플리케이션/기기 종류/인터넷 종류에 따라 폴더를 생성할 것이기 때문에 **성과 순서**만 파일 이름에 저장해주세요
-## pcap 폴더 구조
-```bash
-pcap/                            # 원본 PCAP 파일 저장 폴더
-│── YouTube/                     # 어플리케이션 이름
-│   ├── Phone/                   # 기기 종류
-│   │   ├── WiFi/                # 인터넷 종류
-│   │       ├── MIN_01.pcap
-│   │       ├── MIN_02.pcap
-│   │   
-│   ├── PC/                      # 기기 종류
-│       ├── WiFi/                # 인터넷 종류
-│       │   ├── MIN_01.pcap
-│       │   ├── MIN_02.pcap
-│       ├── Ethernet/
-│           ├── MIN_01.pcap
-│           ├── MIN_02.pcap
-```
-## 명령어
-```bash
-python to_df.py
-```
-## 결과
-```bash
-csv/                              # 변환된 CSV 파일 저장 폴더
-│── YouTube/                      # 어플리케이션 이름
-│   ├── Phone/                    # 기기 종류
-│   │   ├── WiFi/                 # 인터넷 종류
-│   │       ├── MIN_01.csv
-│   │       ├── MIN_02.csv
-│   │ 
-│   ├── PC/                       # 기기 종류
-│       ├── WiFi/
-│       │   ├── MIN_01.csv
-│       │   ├── MIN_02.csv
-│       ├── Ethernet/
-│           ├── MIN_01.csv
-│           ├── MIN_02.csv
-```
+![Image](https://github.com/user-attachments/assets/4661ad91-a096-4ba5-a3b1-2d2d92e76e30)
 
-# 데이터셋 현황 (자기이름 넣어서 업데이트 해주세요)
-데이터셋 현황 변경은 시에만 master로 push 부탁드립니다
-데이터셋 csv를 올리는 경우 csv 브랜치로 push 해주세요
-## 민수홍
-### 유튜브
-MacOS Wi-Fi(학교): 5
-### 네이버 TV
-MacOS Wi-Fi(학교): 5
-### 쿠팡플레이
-MacOS Wi-Fi(학교): 5
-### 넷플릭스
-MacOS Wi-Fi(학교): 5
-### SOOP
-MacOS Wi-Fi(학교): 5
-#### Wavve
-MacOS Wi-Fi(학교): 5
+현대 네트워크 환경에서는 점점 더 많은 트래픽들이 암호화되면서, 기존의 패킷 기반 분석 기술만으로는 어플리케이션을 정확히 식별하기 어려워지고 있습니다. 이는 보안 위협 대응과 네트워크 리소스 관리에 제약을 주며, 결과적으로 관리 비용 상승이라는 현실적인 문제로 이어지고 있습니다.
+
+FLOWTRACER는 이러한 문제를 해결하기 위해 개발된 패킷 플로우 기반 어플리케이션 식별 시스템입니다. 암호화된 패킷 컨텐츠를 분석하는 대신, 패킷 플로우 패턴을 활용해 암호화 수준이 높은 트래픽에서도 어플리케이션을 정확하게 식별할 수 있도록 설계 되었습니다.
+
+이 기술을 통해 암호화된 트래픽에서도 어플리케이션 식별이 가능해지며 다음과 같은 보안 및 네트워크 운영 측면의 비용 절감 효과를 기대할 수 있습니다.
+
+- 네트워크 관리자 측면 : 비인가 어플리케이션 차단, 트래픽 우선순위 설정 등을 통해 트래픽 관리에 비용 절감
+- 보안 관리자 측면 : 어플리케이션 기반 이상현상 탐지 비용 감소
+
+## 2. 주요 기능
+
+1. 트래픽 정보 시각화
+    
+    ![Image](https://github.com/user-attachments/assets/42d97cbe-694d-48f1-af03-f9f0f53d3885)
+    
+    클라이언트 별 네트워크 리소스 사용량 시각화
+    
+2. 어플리케이션 식
+    
+    ![Image](https://github.com/user-attachments/assets/6a3d2708-78a7-40c0-93c9-9634d9ef977f)
+    
+    개별 패킷의 패턴 분석 및 어플리케이션 식별 결과 제공
+    
+3. 식별 어플리케이션 차단 기능
+    
+    ![Image](https://github.com/user-attachments/assets/4e0be355-d5be-4a82-8b9d-f4a2d673dbb1)
+    
+    특정 어플리케이션 트래픽 선택적 차단 가능
+    
+
+## 3. 팀 소개
+
+| 담당 | 이름 |
+| --- | --- |
+| 팀장 | 민수홍 |
+| 팀원 | 전홍선 |
+| 팀원 | 장승훈 |
+| 팀원 | 박도현 |
+| 팀원 | 서동현 |
+| 지도교수 | 윤명근 |
+
+## 4. 사용환경 설정 및 시작하기
+
+(추후 추가)
+
+## 5. 폴더 구조
+
+(추후 추가)
+
+## 5. 소개 자료
+
+- 중간 발표 보고서(추후 추가)
+- 중간 발표 ppt(추후 추가)
+- 최종 발표 보고서(추후 추가)
+- 최종 발표 ppt(추후 추가)
+- 포스터(추후 추가)
+- 소개 영상(추후 추가)
