@@ -79,6 +79,7 @@ let monitoringStartTime = new Date();
 document.addEventListener('DOMContentLoaded', function() {
     // 트래픽 상세 페이지 접속 이벤트 발생
     socket.emit('join_traffic_detail', { ip: ip });
+    console.log(`트래픽 상세 페이지에 접속한 IP: ${ip}`);
     // 차트 초기화
     initTrafficChart();
     initProtocolChart();
@@ -419,13 +420,6 @@ socket.on('traffic_detail', function(data) {
     patternChart.update();
 });
 
-// 소켓 이벤트: MAC 주소 업데이트
-socket.on('mac_update', function(data) {
-    if (data.mac_dict && data.mac_dict[ip]) {
-        document.getElementById('mac-address').textContent = data.mac_dict[ip];
-    }
-});
-
 // 소켓 이벤트: 호스트명 업데이트
 socket.on('hostname_update', function(data) {
     if (data.ip === ip) {
@@ -449,6 +443,8 @@ socket.on('protocol_stats', function(data) {
 // 소켓 이벤트: 포트 통계
 socket.on('port_stats', function(data) {
     if (data.ip !== ip) return;
+
+    console.log(data);
     
     const ports = Object.keys(data.ports).slice(0, 10);
     const counts = ports.map(port => data.ports[port]);
