@@ -17,17 +17,18 @@ service = Service('/usr/local/bin/chromedriver')
 
 options = Options()
 options.add_argument("--incognito")
-options.add_argument("--headless")  # 백그라운드 실행
+#options.add_argument("--headless")  # 백그라운드 실행
 
-save_dir = '/home/jang/Documents/new_pcap/capstone-2025-35/pcap/soop/PC/WiFi'  # 원하는 pcap 경로로 수정
+save_dir = ''  # 원하는 경로로 수정
+os.makedirs(save_dir, exist_ok=True)   # 디렉터리가 없으면 자동 생성
 
 # TShark 시작
 timestamp = time.strftime("%Y%m%d_%H%M%S")
-# 전체 파일 경로 생성 이름
+# 전체 파일 경로 생성
 pcap_path = os.path.join(save_dir, f'{timestamp}_Jang_soop.pcap')
 
 # tshark 실행
-tshark_process = subprocess.Popen(['tshark', '-i', 'wlp61s0', '-w', pcap_path])
+tshark_process = subprocess.Popen(['tshark', '-i', '네트워크 인터페이스', '-w', pcap_path])
 print(f"PCAP 파일 저장 위치: {pcap_path}")
 logging.info("TShark 캡처 시작")
 
@@ -36,7 +37,8 @@ try:
         try:
             driver = webdriver.Chrome(service=service, options=options)
             driver.get('https://www.sooplive.co.kr/live/all')
-            time.sleep(2)
+            driver.refresh()  # 페이지 새로고침 안정성을 위해
+            time.sleep(3)
 
             videos = driver.find_elements(By.CLASS_NAME, "thumbs-box")
             if not videos:
