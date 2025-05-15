@@ -25,9 +25,9 @@
         <td><button type="button" onclick="unblockIP()">해제</button></td>
       </tr>
     </table>
-
-    <button type="button" onclick="startSuricata()">suricata 시작</button>
-    <button type="button" onclick="stopSuricata()">suricata 정지</button>
+      <button type="button" onclick="startSuricata()">suricata 시작</button>
+      <button type="button" onclick="stopSuricata()">suricata 정지</button>
+      <button type="button" onclick="unblockAllIPs()">모든 IP 차단 해제</button>
   </form>
   <div id="result"></div>
   <div id="blocked-list-container">
@@ -92,6 +92,22 @@
             document.getElementById('result').textContent = "서버 오류가 발생했습니다.";
         });
     }
+    function unblockAllIPs() {
+      if (confirm('정말 모든 IP 차단을 해제하시겠습니까?')) {
+        fetch('/unblock-all', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('result').textContent = data.message;
+          fetchBlockedIPs(); // 차단 목록 갱신
+        })
+        .catch(() => {
+          document.getElementById('result').textContent = "서버 오류가 발생했습니다.";
+        });
+      }
+    }
     function startSuricata() {
     fetch('/start-suricata', { method: 'POST' })
         .then(res => res.text())
@@ -100,10 +116,10 @@
     }
 
     function stopSuricata() {
-        fetch('/stop-suricata', { method: 'POST' })
-            .then(res => res.text())
-            .then(msg => alert(msg))
-            .catch(err => alert('오류: ' + err));
+      fetch('/stop-suricata', { method: 'POST' })
+          .then(res => res.text())
+          .then(msg => alert(msg))
+          .catch(err => alert('오류: ' + err));
     }
     document.addEventListener('DOMContentLoaded', function() {
       fetchBlockedIPs();

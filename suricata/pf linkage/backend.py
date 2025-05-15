@@ -72,6 +72,20 @@ def unblock_ip(ip):
     reload_anchor()
     return f"{ip} 단방향 차단 해제\n"
 
+# 모든 IP 차단 해제 함수
+def unblock_all_ips():
+    # 만약 capstone 파일 자체가 없으면 바로 return
+    if not os.path.exists(ANCHOR_FILE):
+        return "차단된 IP가 없습니다."
+    
+    # capstone 파일을 비움 (모든 규칙 제거)
+    with open(ANCHOR_FILE, "w") as f:
+        f.write("")
+    
+    # 빈 규칙 파일을 pf에 로드
+    reload_anchor()
+    return "모든 IP 차단이 해제되었습니다."
+
 # Suricata alert 로그 모니터링 (5-tuple 기반 자동 차단)
 def monitor_suricata_logs():
     # eve.json 이 없으면 로그파일이 없다는 뜻(아무것도 하지 않음)
@@ -148,7 +162,7 @@ def unblock():
 def start_suricata():
     try:
         subprocess.Popen([
-            "suricata", "-c", "/opt/homebrew/etc/suricata/suricata.yaml", "-i", "192.168.45.238"
+            "suricata", "-c", "/opt/homebrew/etc/suricata/suricata.yaml", "-i", "en0"
         ])
         print("[INFO] Suricata 실행됨")
 
@@ -187,6 +201,14 @@ def blocked_ips():
             ips.append(ip)
     return jsonify(ips)
 
+# 모든 IP 차단 해제 라우트
+@app.route('/unblock-all', methods=['POST'])
+def unblock_all():
+    try:
+        msg = unblock_all_ips()
+        return jsonify({"message": msg})
+    except Exception as e:
+        return jsonify({"message": f"모든 IP 차단 해제 실패: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5002)
