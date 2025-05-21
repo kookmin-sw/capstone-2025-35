@@ -30,7 +30,8 @@ HOSTNAMES = {
 
 # 전역 변수
 start_time = datetime.now()
-traffic_data = {ip: [] for ip in MONITORING_IP_LIST}
+traffic_data = {ip: 0 for ip in MONITORING_IP_LIST}  # 각 IP별 최신 트래픽 값만 저장
+traffic_history = {ip: [] for ip in MONITORING_IP_LIST}  # 히스토리 저장용 (내부 사용)
 seconds_passed = 0
 
 # ======================== #
@@ -51,10 +52,104 @@ def traffic_detail(ip):
     data = {
         "ip": ip,
         "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-        "detected_services": STREAMING_SERVICES.get(ip, [])
+        "detected_services": STREAMING_SERVICES.get(ip, []),
+        "mac_address": MAC_DICT.get(ip, "Unknown"),
+        "hostname": HOSTNAMES.get(ip, "Unknown")
+    }
+
+    # 트래픽 상세 페이지에 필요한 초기 데이터 전송
+    # 이 데이터는 페이지 로드 시 즉시 사용 가능하도록 함
+    traffic_detail_data = {
+        "ip": ip,
+        "download": random.randint(10000, 100000),
+        "upload": random.randint(5000, 30000)
+    }
+    
+    protocol_stats_data = {
+        "ip": ip,
+        "tcp": random.randint(50, 200),
+        "udp": random.randint(20, 100),
+        "icmp": random.randint(0, 10),
+        "other": random.randint(0, 5)
+    }
+    
+    ports_data = {}
+    common_ports = [80, 443, 8080, 22, 53, 3389, 21, 25, 110, 143]
+    for port in common_ports:
+        ports_data[port] = random.randint(10, 100)
+    
+    port_stats_data = {
+        "ip": ip,
+        "ports": ports_data
     }
 
     return render_template("traffic_detail.html", data=data)
+
+# ======================== #
+#     SOCKET.IO 이벤트     #
+# ======================== #
+
+@socketio.on('connect')
+def handle_connect():
+    """클라이언트 연결 시 호출되는 이벤트 핸들러"""
+    print("클라이언트가 연결되었습니다.")
+
+@socketio.on('join_traffic_detail')
+def handle_join_traffic_detail(data):
+    """트래픽 상세 페이지에 접속했을 때 호출되는 이벤트 핸들러"""
+    if 'ip' not in data:
+        return
+    
+    ip = data['ip']
+    if ip not in MONITORING_IP_LIST:
+        return
+    
+    print(f"클라이언트가 {ip}의 트래픽 상세 페이지에 접속했습니다.")
+    
+    # 초기 데이터 전송
+    # MAC 주소 정보
+    socketio.emit('mac_update', {
+        'mac_dict': MAC_DICT
+    })
+    
+    # 호스트명 정보
+    socketio.emit('hostname_update', {
+        'ip': ip,
+        'hostname': HOSTNAMES.get(ip, "Unknown")
+    })
+    
+    # 트래픽 상세 정보
+    socketio.emit('traffic_detail', {
+        'ip': ip,
+        'download': random.randint(10000, 100000),
+        'upload': random.randint(5000, 30000)
+    })
+    
+    # 프로토콜 통계
+    socketio.emit('protocol_stats', {
+        'ip': ip,
+        'tcp': random.randint(50, 200),
+        'udp': random.randint(20, 100),
+        'icmp': random.randint(0, 10),
+        'other': random.randint(0, 5)
+    })
+    
+    # 포트 통계
+    ports = {}
+    common_ports = [80, 443, 8080, 22, 53, 3389, 21, 25, 110, 143]
+    for port in common_ports:
+        ports[port] = random.randint(10, 100)
+    
+    socketio.emit('port_stats', {
+        'ip': ip,
+        'ports': ports
+    })
+    
+    # 스트리밍 서비스 정보
+    socketio.emit('streaming_detection', {
+        'ip': ip,
+        'services': STREAMING_SERVICES.get(ip, [])
+    })
 
 # ======================== #
 #      데모 데이터 생성     #
@@ -106,10 +201,14 @@ def generate_traffic_data():
                 
             traffic_value = generate_traffic_pattern(seconds_passed, base_traffic, noise_level)
             
-            if len(traffic_data[ip]) > 100:
-                traffic_data[ip] = traffic_data[ip][-100:]
+            # 히스토리 저장 (내부 사용)
+            if len(traffic_history[ip]) > 100:
+                traffic_history[ip] = traffic_history[ip][-100:]
             
-            traffic_data[ip].append(traffic_value)
+            traffic_history[ip].append(traffic_value)
+            
+            # 최신 값만 저장 (클라이언트로 전송)
+            traffic_data[ip] = traffic_value
         
         # 트래픽 데이터 전송
         socketio.emit('traffic_total', {
@@ -201,12 +300,14 @@ def generate_traffic_data():
                     'info': info
                 }
                 
-                socketio.emit('packet_log', {
+                # 패킷 로그 데이터 전송
+                packet_data = {
                     'ip': ip,
                     'packet': packet
-                })
-        
-        time.sleep(1)  # 1초마다 업데이트
+                }
+                socketio.emit('packet_log', packet_data)
+    
+        time.sleep(2)  # 2초마다 업데이트
 
 # ======================== #
 #      APP 실행 코드       #
