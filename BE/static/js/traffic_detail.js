@@ -464,22 +464,44 @@ socket.on('packet_log', function(data) {
     renderPacketLog();
 });
 
+
+const container = document.getElementById('streaming-services'); //전역 변수로 만든 것 버튼 클릭을 하기 위해
 // 소켓 이벤트: 스트리밍 서비스 감지
 socket.on('streaming_detection', function(data) {
     if (data.ip !== ip || !data.services || data.services.length === 0) return;
     
-    const container = document.getElementById('streaming-services');
     container.innerHTML = '';
     
     data.services.forEach(service => {
         const serviceCard = document.createElement('div');
         serviceCard.className = `streaming-card app-${service.toLowerCase()}`;
         serviceCard.innerHTML = `
+        <div class="streaming-content"> 
             <div class="streaming-icon">
                 <i class="fas fa-video"></i>
             </div>
             <div class="streaming-name">${service}</div>
-        `;
+        </div>
+        <button class="block-btn" data-service="${service}">차단</button>   
+    `   ;
         container.appendChild(serviceCard);
     });
 });
+
+container.addEventListener('click', function (e) {
+    if (e.target.classList.contains('block-btn')) {
+        // 차단 버튼 클릭 시, 서버에 detected_sessions 요청
+        socket.emit('get_detected_sessions');
+        // 2) Suricata 실행 요청 이벤트 추가
+        // Suricata 시작 요청을 HTTP POST로 보냄
+        fetch('/start-suricata', {
+            method: 'POST'
+        });
+    }
+});
+
+socket.on('detected_sessions_update', function(data) {
+    const sessions = data.sessions; //sessions -> 5tuple이 포함된 리스트(리스트안에 dic형태로 존재)
+    //이 부분에서 서버로부터 sessions dic 형태의 값을 받는다고 보면 됩니다
+});
+
