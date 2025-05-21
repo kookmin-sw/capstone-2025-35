@@ -5,11 +5,9 @@ import time
 import random
 import json
 from datetime import datetime
-
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
-
 # 데모 데이터
 MONITORING_IP_LIST = ["192.168.1.100", "192.168.1.101", "192.168.1.102"]
 MAC_DICT = {
@@ -27,28 +25,23 @@ HOSTNAMES = {
     "192.168.1.101": "smartphone.local",
     "192.168.1.102": "smart-tv.local"
 }
-
 # 전역 변수
 start_time = datetime.now()
 traffic_data = {ip: 0 for ip in MONITORING_IP_LIST}  # 각 IP별 최신 트래픽 값만 저장
 traffic_history = {ip: [] for ip in MONITORING_IP_LIST}  # 히스토리 저장용 (내부 사용)
 seconds_passed = 0
-
 # ======================== #
 #          ROUTES         #
 # ======================== #
-
 @app.route("/")
 def index():
     """메인 페이지"""
     return render_template("index.html")
-
 @app.route("/traffic/<ip>")
 def traffic_detail(ip):
     """특정 IP의 트래픽 정보를 반환하는 페이지"""
     if ip not in MONITORING_IP_LIST:
         return render_template("error.html", message="해당 IP는 모니터링되지 않습니다.")
-
     data = {
         "ip": ip,
         "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -56,7 +49,6 @@ def traffic_detail(ip):
         "mac_address": MAC_DICT.get(ip, "Unknown"),
         "hostname": HOSTNAMES.get(ip, "Unknown")
     }
-
     # 트래픽 상세 페이지에 필요한 초기 데이터 전송
     # 이 데이터는 페이지 로드 시 즉시 사용 가능하도록 함
     traffic_detail_data = {
@@ -82,18 +74,14 @@ def traffic_detail(ip):
         "ip": ip,
         "ports": ports_data
     }
-
     return render_template("traffic_detail.html", data=data)
-
 # ======================== #
 #     SOCKET.IO 이벤트     #
 # ======================== #
-
 @socketio.on('connect')
 def handle_connect():
     """클라이언트 연결 시 호출되는 이벤트 핸들러"""
     print("클라이언트가 연결되었습니다.")
-
 @socketio.on('join_traffic_detail')
 def handle_join_traffic_detail(data):
     """트래픽 상세 페이지에 접속했을 때 호출되는 이벤트 핸들러"""
@@ -150,11 +138,9 @@ def handle_join_traffic_detail(data):
         'ip': ip,
         'services': STREAMING_SERVICES.get(ip, [])
     })
-
 # ======================== #
 #      데모 데이터 생성     #
 # ======================== #
-
 def generate_traffic_pattern(time_passed, base_traffic=50000, noise_level=20000):
     """시간에 따른 트래픽 패턴 생성"""
     # 기본 트래픽 + 랜덤 노이즈
@@ -178,7 +164,6 @@ def generate_traffic_pattern(time_passed, base_traffic=50000, noise_level=20000)
     
     traffic_value = max(0, int((base_traffic + noise + spike) * time_factor))
     return traffic_value
-
 def generate_traffic_data():
     """랜덤 트래픽 데이터 생성"""
     global seconds_passed
@@ -306,13 +291,12 @@ def generate_traffic_data():
                     'packet': packet
                 }
                 socketio.emit('packet_log', packet_data)
-        
-        time.sleep(1)  # 1초마다 업데이트
+
+        time.sleep(2)  # 2초마다 업데이트
 
 # ======================== #
 #      APP 실행 코드       #
 # ======================== #
-
 if __name__ == "__main__":
     print("=== 트래픽 모니터링 데모 시작 ===")
     print(f"모니터링 중인 IP: {MONITORING_IP_LIST}")

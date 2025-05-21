@@ -22,6 +22,7 @@ class BaseSniffer:
         self.lock = threading.Lock()  # 동기화 객체 추가
         self.classification = Classification(bitmap_path)
         self.predicted = []
+        self.detected_sessions = [] # 새 코드
         self.monitoring_ips = MONITORING_IP_LIST
         self.traffic_tmp = defaultdict(lambda: {'outbound': defaultdict(list), 'inbound': defaultdict(list)})
         self.traffic_rate_detail = {
@@ -91,6 +92,11 @@ class BaseSniffer:
         패킷 스니핑을 시작하는 함수 (자식 클래스에서 구현 필요)
         """
         raise NotImplementedError("start_sniffing()은 자식 클래스에서 구현해야 합니다.")
+    
+
+    def send_detected_sessions(self):
+        # detected_sessions 리스트를 그대로 보내기  서버 요청
+        self.socketio.emit('detected_sessions_update', {'sessions': self.detected_sessions})
     
     def add_traffic(self, src_ip, dst_ip, packet_size):
         """
@@ -198,13 +204,28 @@ class BaseSniffer:
 
         logging.info(f"세션: {session_key} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
 
-        if score >= 30:
+        if score >= 25:
+
             self.emit("streaming_detection", {
                 'ip': session_key[0],
                 'services': [predict],
             })
             self.predict_app[session_key[0]].append(predict)
-            logging.info(f"세션: {session_key} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
+            src_ip, src_port, dst_ip, dst_port, protocol = session_key
+            logging.info(f"[스트리밍 탐지] {src_ip}:{src_port} → {dst_ip}:{dst_port} ({protocol}) "
+                        f"서비스: {predict}, 점수: {score}")
+            
+            # 세션 저장 (옵션)
+            self.detected_sessions = [] #리스트 초기화
+            self.detected_sessions.append({
+                'src_ip': src_ip,
+                'src_port': src_port,
+                'dst_ip': dst_ip,
+                'dst_port': dst_port,
+                'protocol': protocol,
+                'predict': predict,
+                'score': score
+            })
         
     def visualization(self, log_path):
         """
