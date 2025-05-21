@@ -306,8 +306,8 @@ def generate_traffic_data():
                     'packet': packet
                 }
                 socketio.emit('packet_log', packet_data)
-        
-        time.sleep(1)  # 1초마다 업데이트
+    
+        time.sleep(2)  # 2초마다 업데이트
 
 # ======================== #
 #      APP 실행 코드       #
