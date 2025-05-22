@@ -1,9 +1,19 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
-from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH
 import threading
 import signal
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+try:
+    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH
+except ImportError:
+    print("config가 설정되지 않았습니다.")
+    # Prompt user for interface and IP list at runtime
+    from create_config import create_config, prompt_for_ip_and_interface
+    INTERFACE, MONITORING_IP_LIST = prompt_for_ip_and_interface()
+    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH 
+
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
@@ -56,6 +66,12 @@ def handle_join_traffic_detail(data):
 # ======================== #
 
 if __name__ == "__main__":
+    if MONITORING_IP_LIST == None:
+        print("config.py에 MONITORING_IP_LIST가 설정되지 않았습니다.")
+        # Prompt user for interface and IP list at runtime
+        INTERFACE, MONITORING_IP_LIST = prompt_for_ip_and_interface()
+        print("config.py를 생성했습니다. 다시 실행해주세요.")
+    
     if SNIFF_LIB == "pyshark":
         from pyshark_sniffer import PysharkSniffer
         sniffer = PysharkSniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)

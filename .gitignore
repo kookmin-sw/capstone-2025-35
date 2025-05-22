@@ -8,3 +8,4 @@ csv/
 plot/
 
 *.ipynb
+config.py
