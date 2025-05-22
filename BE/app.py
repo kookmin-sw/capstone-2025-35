@@ -6,18 +6,26 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 try:
-    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH
+    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 except ImportError:
     print("config가 설정되지 않았습니다.")
     # Prompt user for interface and IP list at runtime
     from create_config import create_config, prompt_for_ip_and_interface
     INTERFACE, MONITORING_IP_LIST = prompt_for_ip_and_interface()
-    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH 
+    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 
+
+from DB import init_db, db
+from DB.models import PacketLog
 
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# DB init
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
+init_db(app)
 
 # ======================== #
 #           ENDS           #
@@ -74,10 +82,10 @@ if __name__ == "__main__":
     
     if SNIFF_LIB == "pyshark":
         from pyshark_sniffer import PysharkSniffer
-        sniffer = PysharkSniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)
+        sniffer = PysharkSniffer(socketio=socketio, app=app, interface=INTERFACE, bitmap_path=BITMAP_PATH)
     elif SNIFF_LIB == "scapy":
         from scapy_sniffer import ScapySniffer
-        sniffer = ScapySniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)
+        sniffer = ScapySniffer(socketio=socketio, app=app, interface=INTERFACE, bitmap_path=BITMAP_PATH)
     threading.Thread(target=sniffer.start_sniffing, daemon=True).start()
     threading.Thread(target=sniffer.monitor_traffic, daemon=True).start()
 
