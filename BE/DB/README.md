@@ -1,7 +1,7 @@
 # 📦 사용 방법 (macOS 기준)
 
 
-## 1️⃣ 필수 패키지 설치
+## 1️⃣ (실행 전) 필수 패키지 설치
 
 #### SQLAlchemy 설치
 ```bash
@@ -18,7 +18,7 @@ pip install Flask-SQLAlchemy
 pip install pymysql
 ```
 
-## 2️⃣ MySQL 실행 및 DB 생성
+## 2️⃣ (실행 전) MySQL 실행 및 DB 생성
 
 #### root계정으로 MySQL 로그인
 ```bash
@@ -43,7 +43,7 @@ packet_logs_db가 출력되면 성공
 exit;
 ```
 
-### 데이터베이스 확인방법
+## 3️⃣ (실행 후) 데이터베이스 확인방법
 
 #### root계정으로 MySQL 로그인
 ```bash
