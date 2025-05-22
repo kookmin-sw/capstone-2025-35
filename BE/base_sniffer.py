@@ -5,18 +5,22 @@ import time
 from collections import OrderedDict, defaultdict, deque
 from classification import Classification
 from config import MONITORING_IP_LIST, MONITORING_PERIOD, TARGET_APPLICATIONS
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import matplotlib.pyplot as plt
+from DB.utils import insert_packet_log
+from flask import current_app
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class BaseSniffer:
-    def __init__(self, socketio, interface="en0", bitmap_path="bitmap_record.pkl"):
+    def __init__(self, socketio, app, interface="en0", bitmap_path="bitmap_record.pkl"):
         """
         패킷 스니핑을 위한 기본 클래스
         """
+        self.app = app
         self.interface = interface
         self.sessions = OrderedDict()
         self.lock = threading.Lock()  # 동기화 객체 추가
@@ -333,6 +337,10 @@ class BaseSniffer:
             inbound_size = sum(x for x in data_list if x > 0)
             outbound_size = sum(abs(x) for x in data_list if x < 0)
 
+            utc_time = datetime.now(timezone.utc)
+            timestamp = utc_time.astimezone(ZoneInfo("Asia/Seoul"))
+            
+
             base_packet = {
                 "time": int(time.time() * 1000),
                 "source": src_ip,
@@ -350,6 +358,17 @@ class BaseSniffer:
                     "ip": ip,
                     "packet": packet
                 })
+                with self.app.app_context():
+                    insert_packet_log(
+                        timestamp=timestamp,
+                        src_ip=src_ip,
+                        src_port=src_port,
+                        dst_ip=dst_ip,
+                        dst_port=dst_port,
+                        protocol=protocol,
+                        size=inbound_size,
+                        direction="DOWNLOAD"
+                    )
 
             if outbound_size > 0:
                 packet = base_packet.copy()
@@ -361,6 +380,17 @@ class BaseSniffer:
                     "ip": ip,
                     "packet": packet
                 })
+                with self.app.app_context():
+                    insert_packet_log(
+                        timestamp=timestamp,
+                        src_ip=src_ip,
+                        src_port=src_port,
+                        dst_ip=dst_ip,
+                        dst_port=dst_port,
+                        protocol=protocol,
+                        size=outbound_size,
+                        direction="UPLOAD"
+                    )
     
     def streaming_detection_update(self, ip):
         if len(self.predict_app[ip]) > 0:

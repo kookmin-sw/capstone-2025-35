@@ -8,8 +8,8 @@ from collections import deque
 from base_sniffer import BaseSniffer
 
 class PysharkSniffer(BaseSniffer):
-    def __init__(self, socketio, interface="en0", bitmap_path="bitmap_record.pkl"):
-        super().__init__(socketio, interface, bitmap_path)
+    def __init__(self, socketio, app, interface="en0", bitmap_path="bitmap_record.pkl"):
+        super().__init__(socketio, app, interface, bitmap_path)
 
     def handle_tls(self, packet, session_key):
         """

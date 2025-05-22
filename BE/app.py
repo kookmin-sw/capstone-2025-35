@@ -1,13 +1,21 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO
-from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH
+from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 import threading
 import signal
 import os
 
+from DB import init_db, db
+from DB.models import PacketLog
+
 # Flask 및 WebSocket 설정
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# DB init
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
+init_db(app)
 
 # ======================== #
 #           ENDS           #
@@ -58,10 +66,10 @@ def handle_join_traffic_detail(data):
 if __name__ == "__main__":
     if SNIFF_LIB == "pyshark":
         from pyshark_sniffer import PysharkSniffer
-        sniffer = PysharkSniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)
+        sniffer = PysharkSniffer(socketio=socketio, app=app, interface=INTERFACE, bitmap_path=BITMAP_PATH)
     elif SNIFF_LIB == "scapy":
         from scapy_sniffer import ScapySniffer
-        sniffer = ScapySniffer(socketio=socketio, interface=INTERFACE, bitmap_path=BITMAP_PATH)
+        sniffer = ScapySniffer(socketio=socketio, app=app, interface=INTERFACE, bitmap_path=BITMAP_PATH)
     threading.Thread(target=sniffer.start_sniffing, daemon=True).start()
     threading.Thread(target=sniffer.monitor_traffic, daemon=True).start()
 
