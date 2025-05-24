@@ -488,20 +488,23 @@ socket.on('streaming_detection', function(data) {
     });
 });
 
+// 차단 버튼 클릭 이벤트
 container.addEventListener('click', function (e) {
     if (e.target.classList.contains('block-btn')) {
         // 차단 버튼 클릭 시, 서버에 detected_sessions 요청
         socket.emit('get_detected_sessions');
-        // 2) Suricata 실행 요청 이벤트 추가
-        // Suricata 시작 요청을 HTTP POST로 보냄
-        fetch('/start-suricata', {
-            method: 'POST'
-        });
     }
 });
 
+// 5-tuple 값 서버로 전달(차단)
 socket.on('detected_sessions_update', function(data) {
     const sessions = data.sessions; //sessions -> 5tuple이 포함된 리스트(리스트안에 dic형태로 존재)
     //이 부분에서 서버로부터 sessions dic 형태의 값을 받는다고 보면 됩니다
+
+    socket.emit('block_streaming_service', { sessions: sessions });
 });
 
+// 차단 해제 버튼 클릭 이벤트
+document.getElementById('clear_block_rule').addEventListener('click', function() {
+    socket.emit('clear_streaming');
+});
