@@ -21,6 +21,9 @@ MONITORING_PERIOD = 20
 SNIFF_LIB = "scapy"
 BITMAP_PATH = os.path.join(os.path.dirname(__file__), "pkl", "bitmap_0511_1335.pkl")
 LOG_PATH = "../logs"
+#DB config
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@localhost:3306/packet_logs_db' # 예시) 'mysql+pymysql://<username>:<password>@<host>:<port>/<database_name>'
+SQLALCHEMY_TRACK_MODIFICATIONS = False # 데이터 변경 추적 기능
 INTERFACE = "{INTERFACE}"  # 네트워크 인터페이스
 MONITORING_IP_LIST = {MONITORING_IP_LIST}  # 모니터링할 IP 주소
 '''
@@ -54,6 +57,9 @@ MONITORING_PERIOD = 20
 SNIFF_LIB = "scapy"
 BITMAP_PATH = os.path.join(os.path.dirname(__file__), "pkl", "bitmap_0511_1335.pkl")
 LOG_PATH = "../logs"
+#DB config
+SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@localhost:3306/packet_logs_db' # 예시) 'mysql+pymysql://<username>:<password>@<host>:<port>/<database_name>'
+SQLALCHEMY_TRACK_MODIFICATIONS = False # 데이터 변경 추적 기능
 INTERFACE = "{interface}"  # 네트워크 인터페이스
 MONITORING_IP_LIST = {ip_list}  # 모니터링할 IP 주소
 '''
