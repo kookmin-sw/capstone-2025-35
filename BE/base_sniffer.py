@@ -100,7 +100,10 @@ class BaseSniffer:
 
     def send_detected_sessions(self):
         # detected_sessions 리스트를 그대로 보내기  서버 요청
+        # print(f"[INFO] base_sniffer.py -> send_detected_sessions 호출")
         self.socketio.emit('detected_sessions_update', {'sessions': self.detected_sessions})
+        # print(f"[INFO] base_sniffer.py -> send_detected_sessions 전송")
+        # print(f"[INFO] base_sniffer.py -> send_detected_sessions 에서 detected_sessions: {self.detected_sessions}")
     
     def add_traffic(self, src_ip, dst_ip, packet_size):
         """
