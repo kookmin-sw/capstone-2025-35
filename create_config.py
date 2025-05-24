@@ -19,7 +19,7 @@ TARGET_APPLICATIONS = {{
 }}
 MONITORING_PERIOD = 20
 SNIFF_LIB = "scapy"
-BITMAP_PATH = os.path.join(os.path.dirname(__file__), "pkl", "bitmap_0511_1335.pkl")
+BITMAP_PATH = os.path.join(os.path.dirname(__file__), "pkl", "Base.pkl")
 LOG_PATH = "../logs"
 #DB config
 SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@localhost:3306/packet_logs_db' # 예시) 'mysql+pymysql://<username>:<password>@<host>:<port>/<database_name>'
@@ -55,7 +55,7 @@ TARGET_APPLICATIONS = {{
 }}
 MONITORING_PERIOD = 20
 SNIFF_LIB = "scapy"
-BITMAP_PATH = os.path.join(os.path.dirname(__file__), "pkl", "bitmap_0511_1335.pkl")
+BITMAP_PATH = os.path.join(os.path.dirname(__file__), "pkl", "Base.pkl")
 LOG_PATH = "../logs"
 #DB config
 SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://root@localhost:3306/packet_logs_db' # 예시) 'mysql+pymysql://<username>:<password>@<host>:<port>/<database_name>'

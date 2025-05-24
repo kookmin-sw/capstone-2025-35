@@ -13,7 +13,8 @@ except ImportError:
     # Prompt user for interface and IP list at runtime
     from create_config import create_config, prompt_for_ip_and_interface
     INTERFACE, MONITORING_IP_LIST = prompt_for_ip_and_interface()
-    from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
+    print("config.py를 생성했습니다. 다시 실행해주세요.")
+    exit(1)
 
 
 from DB import init_db, db
