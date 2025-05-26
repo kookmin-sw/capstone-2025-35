@@ -1,4 +1,4 @@
-## FLOWTRACER | 암호화 트래픽 패킷 길이를 이용한 어플리케이션 식별
+# FLOWTRACER | 암호화 트래픽 패킷 길이를 이용한 어플리케이션 식별
 ---
 2025 국민대학교 소프트웨어학부 캡스톤 디자인 35조 | 국민대학교 정보보호연구실 & (주)시스메이트
 
@@ -47,19 +47,88 @@ FLOWTRACER는 이러한 문제를 해결하기 위해 개발된 패킷 플로우
 | 팀원 | 서동현 |
 | 지도교수 | 윤명근 |
 
-## 4. 사용환경 설정 및 시작하기
+## 4. 사용환경 설정 및 시작하기(macos, apple silicon기준)
 
-(추후 추가)
+### 의존성 설치
+
+(bash)
+```bash
+pip3 install -r requirements.txt
+```
+
+### MySQL설치 및 DB생성
+
+(bash)
+```bash
+brew install mysql
+brew services start mysql
+mysql -u root -p
+```
+초기 비밀번호는 존재하지 않으므로 Enter입력
+
+(sql)
+```sql
+CREATE DATABASE packet_logs_db;
+SHOW DATABASES;
+```
+packet_logs_db가 출력된다면 성공
+
+sql프롬프트 나가는 법(sql)
+```sql
+exit;
+```
+
+### [차단기능](https://github.com/kookmin-sw/capstone-2025-35/blob/master/BE/README.md)
+
+### 웹사이트 실행
+
+(bash)
+```bash
+python3 app.py
+```
+
+### 실행 후 데이터베이스 확인 방법
+- 클라이언트 세부 페이지 들어가야 패킷이 수집됩니다.
+
+(bash)
+```bash
+mysql -u root -p
+```
+
+(sql)
+```sql
+USE packet_logs_db;
+SELECT * FROM packet_log;
+```
 
 ## 5. 폴더 구조
 
-(추후 추가)
+```bash
+capstone-2025-35/
+├── BE/                          # Flask기반 백엔드 어플리케이션 디렉토리
+│   ├── DB/                      # 데이터베이스 관련 모듈
+│   ├── static/                  # 정적 데이터(css, img)관련 파일
+│   ├── templates/               # HTML 템플릿 파일
+│   ├── app.py                   # Flask 백엔드 서버 실행 메인 파일
+│   └── ...
+├── DataCollection/              # 데이터 전처리 관련 파일
+│   ├── auto_flow/               # 데이터 자동수집 파일
+│   └── to_df.py                 # 수집한 데이터 DataFrame으로 변환
+├── Documents/                   # 프로젝트 문서 및 보고서 자료
+├── experiment/                  # 실험용 코드 저장소
+│   └── tf_idf_classification.py # tf-idf기반 분류 성능 실험 코드
+├── pkl/                         # 모델 학습 결과 파일 저장
+├── suricata/                    # 차단 기능 구현
+├── README.md                    # 프로젝트 README 파일
+├── create_config.py             # IP설정 및 초기 환경 구성
+├── requirements.txt             # Python 패키지 의존성 목록
+└── ...
+```
 
 ## 5. 소개 자료
 
-- 중간 발표 보고서(추후 추가)
-- 중간 발표 ppt(추후 추가)
-- 최종 발표 보고서(추후 추가)
+- [중간발표ppt](https://github.com/kookmin-sw/capstone-2025-35/blob/master/Documents/%EC%A4%91%EA%B0%84%20%EB%B0%9C%ED%91%9C.pptx)
+
 - 최종 발표 ppt(추후 추가)
-- 포스터(추후 추가)
-- 소개 영상(추후 추가)
+
+- [포스터](https://github.com/kookmin-sw/capstone-2025-35/blob/master/Documents/%ED%8F%AC%EC%8A%A4%ED%84%B0.png)
