@@ -211,7 +211,7 @@ class BaseSniffer:
 
         logging.info(f"세션: {session_key} 예측: {predict} 점수: {score} 상세 점수: {score_dict}")
 
-        if score >= 25:
+        if score >= 33:
 
             self.emit("streaming_detection", {
                 'ip': session_key[0],
@@ -432,5 +432,6 @@ class BaseSniffer:
                 self.protocol_stats_update(ip)
                 self.port_stats_update(ip)
                 self.traffic_detail(ip)
+                self.streaming_detection_update(ip)
                 self.packet_log_update(ip)
             time.sleep(1)  # 매 1초마다 반복
