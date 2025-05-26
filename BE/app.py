@@ -5,6 +5,8 @@ import threading
 import signal
 import os
 import sys
+import time
+import json
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 try:
     from config import INTERFACE, BITMAP_PATH, MONITORING_IP_LIST, SNIFF_LIB, LOG_PATH, SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
@@ -258,7 +260,7 @@ def restart_suricata():
         
         # Suricata 실행
         subprocess.Popen([
-            "suricata", "-c", SURICATA_YAML_PATH, "-i", "en0"
+            "suricata", "-c", SURICATA_YAML_PATH, "-i", "en1"
         ])
 
         t = threading.Thread(target=monitor_suricata_logs, daemon=True)
