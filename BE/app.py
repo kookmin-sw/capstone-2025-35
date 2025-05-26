@@ -390,5 +390,5 @@ if __name__ == "__main__":
     threading.Thread(target=sniffer.start_sniffing, daemon=True).start()
     threading.Thread(target=sniffer.monitor_traffic, daemon=True).start()
 
-    signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, sniffer, LOG_PATH))
+    # signal.signal(signal.SIGINT, lambda sig, frame: signal_handler(sig, frame, sniffer, LOG_PATH))
     socketio.run(app, host="0.0.0.0", port=5002, debug=False)
