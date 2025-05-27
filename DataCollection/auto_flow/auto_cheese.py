@@ -11,7 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
 # 웹드라이버 경로 설정
-service = Service('/usr/local/bin/chromedriver')
+service = Service('/opt/homebrew/bin/chromedriver')
 
 # Chrome 옵션 설정
 options = Options()
@@ -19,16 +19,16 @@ options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('--headless')  # 필요한 경우 주석 처리
 
-save_dir = '/home/jang/Documents/new_pcap/capstone-2025-35/pcap/chzzk/PC/WiFi'  # 원하는 pcap저장 경로로 수정
+save_dir = '/pcap/chzzk/PC/WiFi'  # 원하는 pcap저장 경로로 수정
 
 # TShark 실행 (필요시 주석 해제)
 timestamp = time.strftime("%Y%m%d_%H%M%S")
 
 # 전체 파일 경로 생성
-pcap_path = os.path.join(save_dir, f'{timestamp}_Jang_chzzk.pcap') #파일 이름
+pcap_path = os.path.join(save_dir, f'{timestamp}_MIN_chzzk.pcap') #파일 이름
 
 # tshark 실행
-tshark_process = subprocess.Popen(['tshark', '-i', 'wlp61s0', '-w', pcap_path])
+tshark_process = subprocess.Popen(['tshark', '-i', 'en0', '-w', pcap_path])
 print(f"PCAP 파일 저장 위치: {pcap_path}")
 
 try:
